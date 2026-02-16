@@ -1,10 +1,8 @@
 import axios from "axios";
 import {
   Search,
-  MapPin,
   Minus,
   Plus,
-  Bell,
   Heart,
   Navigation,
 } from "lucide-react";
