@@ -5,13 +5,16 @@ import {
   Plus,
   Heart,
   Navigation,
+  ArrowBigRight,
+  ArrowRight,
+  Star,
+  ArrowLeft,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../Base Url/ApiUrl";
-import useGoogleMaps from "./useGoogleMaps";
 import { SyncLoader } from "react-spinners";
 
 const HomePage = () => {
@@ -21,7 +24,9 @@ const HomePage = () => {
   const [whereOpen, setWhereOpen] = useState(false);
   const [whereValue, setWhereValue] = useState("");
 
-  const [hotels, setHotel] = useState([]);
+  const [MostBookedhotels, setHotel] = useState([]);
+  const [perNightHotels, setPerNightHotels] = useState([]);
+  const [perMonthHotels, setPerMonthHotels] = useState([]);
 
   const [Currentlat, setCurrentlat] = useState("");
   const [Currentlon, setCurrentlon] = useState("");
@@ -30,6 +35,9 @@ const HomePage = () => {
   const [checkOut, setCheckOut] = useState(null);
 
   const dropdownRef = useRef(null);
+  const popularScrollRef = useRef(null);
+  const mostBookedScrollRef = useRef(null);
+  const NearByHotel = useRef(null);
 
   useEffect(() => {
     const user_id = localStorage.getItem("user_id");
@@ -50,8 +58,19 @@ const HomePage = () => {
           },
         })
         .then((res) => {
-          // console.log("Nearest places:", res.data.result);
           setHotel(res.data.result);
+          const result = res.data.result || [];
+
+          const perNight = result.filter(
+            (item) => item.rental_type === "per_night",
+          );
+
+          const perMonth = result.filter(
+            (item) => item.rental_type === "per_month",
+          );
+
+          setPerNightHotels(perNight);
+          setPerMonthHotels(perMonth);
         })
         .catch((err) => {
           console.log(err);
@@ -63,10 +82,6 @@ const HomePage = () => {
         (position) => {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
-
-          // console.log(lat);
-          // console.log(lon);
-
           localStorage.setItem("lat", lat);
           localStorage.setItem("lon", lon);
 
@@ -102,8 +117,6 @@ const HomePage = () => {
   const [guests, setGuests] = useState({
     adults: 0,
     children: 0,
-    infants: 0,
-    pets: 0,
   });
 
   const ref = useRef(null);
@@ -128,13 +141,10 @@ const HomePage = () => {
   const summary = () => {
     const totalGuests = guests.adults + guests.children;
     let text = "";
-
-    if (totalGuests > 0) text += `${totalGuests} Guests`;
-    if (guests.infants > 0) text += ` · ${guests.infants} Infants`;
-    if (guests.pets > 0) text += ` · ${guests.pets} Pets`;
-
-    return text || "Add guests";
+    if (totalGuests > 0) text += `${totalGuests} `;
+    return text;
   };
+
   const Row = ({ label, sub, type }) => (
     <div className="flex items-center justify-between py-3">
       <div>
@@ -168,6 +178,27 @@ const HomePage = () => {
   const AddFavorite = async (place_id) => {
     const user_id = localStorage.getItem("user_id");
 
+    setPerNightHotels((prev) =>
+      prev.map((hotel) =>
+        hotel.id === place_id
+          ? {
+              ...hotel,
+              fav_place: hotel.fav_place === "YES" ? "NO" : "YES",
+            }
+          : hotel,
+      ),
+    );
+
+    setPerMonthHotels((prev) =>
+      prev.map((hotel) =>
+        hotel.id === place_id
+          ? {
+              ...hotel,
+              fav_place: hotel.fav_place === "YES" ? "NO" : "YES",
+            }
+          : hotel,
+      ),
+    );
     setHotel((prev) =>
       prev.map((hotel) =>
         hotel.id === place_id
@@ -192,17 +223,6 @@ const HomePage = () => {
       // console.log("Fav API:", res.data);
     } catch (error) {
       console.error(error);
-
-      setHotel((prev) =>
-        prev.map((hotel) =>
-          hotel.id === place_id
-            ? {
-                ...hotel,
-                fav_place: hotel.fav_place === "YES" ? "NO" : "YES",
-              }
-            : hotel,
-        ),
-      );
     }
   };
 
@@ -213,20 +233,18 @@ const HomePage = () => {
   const [service, setService] = useState(null);
   const [SearchLat, setSearchLat] = useState("");
   const [SearchLon, setSearchLon] = useState("");
-  useGoogleMaps();
 
-  console.log(SearchLat);
-  console.log(SearchLon);
   useEffect(() => {
-    let interval = setInterval(() => {
-      if (window.google && !service) {
+    const checkGoogle = () => {
+      if (window.google && window.google.maps && window.google.maps.places) {
         setService(new window.google.maps.places.AutocompleteService());
-        clearInterval(interval);
+      } else {
+        setTimeout(checkGoogle, 200); // retry
       }
-    }, 100);
+    };
 
-    return () => clearInterval(interval);
-  }, [service]);
+    checkGoogle();
+  }, []);
 
   const handleSearch = (value) => {
     setQuery(value);
@@ -275,47 +293,107 @@ const HomePage = () => {
     });
   };
 
+  //   ---------------------------------- Hot Deals --------------------------------------------------------------
+
+  const hotDeals = [
+    {
+      id: 1,
+      title: "Modern Stay",
+      desc: "Stay close to city center • Free WiFi",
+      discount: "25% OFF",
+      image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
+    },
+    {
+      id: 2,
+      title: "Luxury Room",
+      desc: "Premium stay • Breakfast included",
+      discount: "10% OFF",
+      image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
+    },
+    {
+      id: 3,
+      title: "Budget Friendly",
+      desc: "Best for short stays",
+      discount: "15% OFF",
+      image: "https://images.unsplash.com/photo-1505691938895-1758d7feb511",
+    },
+  ];
+
+  //   ---------------------------------- Card Scrolling --------------------------------------------------------------
+
+  const scroll = (ref, direction = "right") => {
+    if (!ref.current) return;
+
+    const container = ref.current;
+    const card = container.children[0];
+    if (!card) return;
+
+    const style = window.getComputedStyle(container);
+    const gap = parseInt(style.gap || 16);
+
+    const scrollAmount = card.offsetWidth + gap;
+
+    container.scrollBy({
+      left: direction === "right" ? scrollAmount : -scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="min-h-screen bg-gray-100  items-start justify-center">
+    <div className="min-h-screen bg-gray-100 overflow-hidden">
+      <div className="min-h-screen bg-white items-start justify-center">
         <div
           className="text-center h-28 pt-4 text-4xl font-bold text-gray-600 
                 bg-gradient-to-b from-black/30 to-bg-gray-100"
         >
           air hopi
         </div>
-
-        <div className="w-full flex justify-center">
+        <div className="w-full flex justify-center z-50">
           <div
             className="
-                        relative bg-white shadow-lg border
-                        rounded-2xl lg:rounded-full sm:w-10
-                        lg:w-full max-w-4xl mx-auto
-                        flex flex-col lg:flex-row
-                        divide-y lg:divide-y-0 lg:divide-x
-                      "
+                       relative bg-white shadow-lg border
+                       rounded-2xl lg:rounded-full
+                       w-full           
+                       sm:w-[95vw]
+                       lg:w-full
+                       max-w-4xl
+                       mx-auto
+                       flex flex-row
+                       divide-x
+                     "
           >
             {/* WHERE */}
             <div
-              className="flex-1 mt-2 px-4 py-2 cursor-pointer"
+              className="flex-1 px-3 py-2 cursor-pointer"
               onClick={() => setWhereOpen(true)}
             >
-              <p className="text-xs font-semibold text-gray-800">Where</p>
+              <p className="text-[9px] sm:text-xs font-semibold text-gray-800">
+                Where
+              </p>
               <input
                 value={whereValue}
                 readOnly
-                placeholder="Search destinations"
-                className="w-full text-sm text-gray-500 focus:outline-none cursor-pointer"
+                placeholder="Search"
+                className="
+                     w-full
+                     text-[9px] sm:text-xs
+                     placeholder:text-[9px] sm:placeholder:text-[13px]
+                     text-gray-700
+                     placeholder:text-gray-800
+                     focus:outline-none
+                     cursor-pointer
+                   "
               />
             </div>
 
-            <div className="h-8 w-px bg-gray-300" />
-
             {/* WHEN */}
-            <div className="flex  mt-2 px-4 py-2">
+            <div className="flex  px-3 py-2">
               {/* Check-in */}
-              <div>
-                <p className="text-xs font-semibold text-gray-800">Check-in</p>
+              <div className="">
+                <p className="text-[9px] sm:text-xs font-semibold text-gray-800">
+                  Check-in
+                </p>
+
                 <DatePicker
                   selected={checkIn}
                   onChange={(date) => setCheckIn(date)}
@@ -324,14 +402,16 @@ const HomePage = () => {
                   endDate={checkOut}
                   minDate={new Date()}
                   inputMode="none"
-                  placeholderText="Select date"
-                  className="w-full  text-sm font-medium outline-none cursor-pointer"
+                  placeholderText="Select"
+                  className="w-full text-[9px] sm:text-xs font-medium outline-none cursor-pointer"
                 />
               </div>
 
               {/* Check-out */}
-              <div>
-                <p className="text-xs font-semibold text-gray-800">Check-out</p>
+              <div className="ml-3">
+                <p className="text-[9px] sm:text-xs font-semibold text-gray-800">
+                  Check-out
+                </p>
                 <DatePicker
                   selected={checkOut}
                   onChange={(date) => setCheckOut(date)}
@@ -340,23 +420,31 @@ const HomePage = () => {
                   endDate={checkOut}
                   minDate={checkIn}
                   inputMode="none"
-                  placeholderText="Select date"
-                  className="w-full  text-sm font-medium outline-none cursor-pointer"
+                  placeholderText="Select"
+                  className="w-full text-[9px] sm:text-xs font-medium outline-none cursor-pointer"
                 />
               </div>
             </div>
 
-            <div className="h-8 w-px bg-gray-300" />
-
             {/* WHO */}
-            <div className="flex-1  mt-2 px-4 py-2">
-              <p className="text-xs font-semibold text-gray-800">Who</p>
+            <div className="flex-1  px-2 py-2">
+              <p className="text-[9px] sm:text-xs font-semibold text-gray-800">
+                Guests
+              </p>
               <input
                 readOnly
                 onClick={() => Setselectoropen(true)}
                 value={summary()}
-                placeholder="Add guests"
-                className="w-full text-sm text-gray-500 focus:outline-none cursor-pointer"
+                placeholder="Add"
+                className="
+                      w-full
+                      text-[9px] sm:text-xs
+                      placeholder:text-[9px] sm:placeholder:text-[13px]
+                      text-gray-500
+                      placeholder:text-gray-800
+                      focus:outline-none
+                      cursor-pointer
+                    "
               />
             </div>
 
@@ -365,8 +453,8 @@ const HomePage = () => {
               onClick={() => {
                 navigate("/location", {
                   state: {
-                    lat: Currentlat,
-                    lon: Currentlon,
+                    lat: SearchLat,
+                    lon: SearchLon,
                     check_in: checkIn,
                     check_out: checkOut,
                     guest: guests,
@@ -374,13 +462,13 @@ const HomePage = () => {
                 });
               }}
               className="
-                     bg-green-500 hover:bg-green-600 text-white
-                     p-2 rounded-full
-                     mx-4 my-3 lg:mx-2 lg:my-0
+                      bg-green-700 hover:bg-green-600 text-white
+                     p-2  rounded-full
+                     mx-4 my-2 lg:mx-2 lg:my-0
                      self-end lg:self-auto
                    "
             >
-              <Search size={25} />
+              <Search size={20} />
             </button>
 
             {/* location */}
@@ -395,7 +483,7 @@ const HomePage = () => {
                      top-full mt-2
                    "
               >
-                {/* Search input */}{" "}
+                {/* Search input */}
                 <input
                   type="text"
                   placeholder="Search location in India..."
@@ -416,9 +504,8 @@ const HomePage = () => {
                 >
                   <Navigation size={16} /> Get Current Location
                 </button>
-                {/* Locations list */}{" "}
+                {/* Locations list */}
                 <div className="max-h-60 overflow-y-auto">
-                  {" "}
                   {suggestions.length > 0 && (
                     <ul className="absolute z-20 w-full bg-white border rounded-lg mt-1 shadow-lg max-h-60 overflow-auto">
                       {suggestions.map((item) => (
@@ -451,12 +538,6 @@ const HomePage = () => {
               >
                 <Row label="Adults" sub="Ages 13+" type="adults" />
                 <Row label="Children" sub="Ages 2–12" type="children" />
-                <Row label="Infants" sub="Under 2" type="infants" />
-                <Row
-                  label="Pets"
-                  sub="Bringing a service animal?"
-                  type="pets"
-                />
 
                 <div className="flex justify-end mt-4">
                   <button
@@ -471,73 +552,410 @@ const HomePage = () => {
           </div>
         </div>
 
-        <div className="p-6 mt-3 space-y-6">
-          <h2 className="text-xl font-semibold">Near By Hotels</h2>
-          {!hotels || hotels.length === 0 ? (
+        {/* Popular stays in indore */}
+        <div className="mt-3 space-y-6 relative z-10">
+          <div className="flex justify-between items-center gap-2 px-4 sm:px-0">
+            <span className="text-xl font-bold pb-2">
+              Popular stays in indore
+            </span>
+            <div className="flex  gap-2">
+              <ArrowLeft onClick={() => scroll(popularScrollRef, "left")} />
+              <ArrowRight onClick={() => scroll(popularScrollRef, "right")} />
+            </div>
+          </div>
+
+          {!perNightHotels || perNightHotels.length === 0 ? (
             <div className="flex justify-center items-center py-10">
               <SyncLoader color="#00c76a" size={10} speedMultiplier={0.6} />
             </div>
           ) : (
             <div
+              ref={popularScrollRef}
               className="
-               grid gap-6
-               grid-cols-1
-               sm:grid-cols-2
-               md:grid-cols-3
-               lg:grid-cols-4
-               xl:grid-cols-6
-               2xl:grid-cols-8
-             "
+                           scroll-px-6  
+                           flex gap-4 overflow-x-auto pb-4
+                           -mx-4 px-4
+                           snap-x snap-proximity
+                           scrollbar-hide
+                         "
             >
-              {hotels.map((hotel) => (
-                <div key={hotel.id} className="cursor-pointer group">
+              {perNightHotels.map((hotel) => (
+                <div
+                  key={hotel.id}
+                  className="
+                            scroll-px-6  
+                            snap-start shrink-0
+                            w-[48%]        
+                            sm:w-[30%]
+                            md:w-[22%]
+                            lg:w-[19%]    
+                            rounded-lg bg-white cursor-pointer group
+                          "
+                >
                   {/* IMAGE */}
                   <div className="relative overflow-hidden rounded-xl">
                     <img
                       onClick={() => navigate(`/showhotel/${hotel.id}`)}
                       src={hotel.places_image?.[0]?.image}
-                      className="h-52 w-full object-cover group-hover:scale-105 transition"
+                      className=" aspect-square sm:aspect-[4/3] h-auto w-full object-cover group-hover:scale-105 transition "
+                      alt={hotel.place_name}
+                    />
+                    {uid && (
+                      <button
+                        onClick={() => AddFavorite(hotel.id)}
+                        className=" absolute top-3 right-3 p-1 rounded-full bg-gradient-to-br from-black/0 to-black/30 z-[1] "
+                      >
+                        <Heart
+                          className={
+                            hotel.fav_place === "YES"
+                              ? "text-red-500 fill-red-500 stroke-white stroke-[1.5]"
+                              : "text-white"
+                          }
+                        />
+                      </button>
+                    )}
+                    <button className=" absolute top-3 left-3 px-2 py-1 text-[11px] font-semibold text-white rounded-full bg-gradient-to-br from-black/0 to-black/80 z-[1] ">
+                      Guest favourite
+                    </button>
+                  </div>
+                  <div
+                    onClick={() => navigate(`/showhotel/${hotel.id}`)}
+                    className=" space-y-0.5 sm:space-y-1 p-2"
+                  >
+                    {/* Title + Rating */}
+                    <div className="">
+                      <h3 className="font-medium truncate text-sm sm:text-base">
+                        {hotel.place_name}
+                      </h3>
+                    </div>
+                    {/* Price */}
+                    <p className="font-semibold flex text-sm sm:text-base">
+                      ₹{hotel.rent_per_night?.toLocaleString()}
+                      <span className="font-normal text-gray-500 text-xs sm:text-sm ml-1">
+                        for
+                        {hotel.rental_type === "per_night"
+                          ? "1 night ."
+                          : "1 month"}
+                      </span>
+                      <span className="text-xs flex ml-2 gap-1 sm:text-sm">
+                        <Star className="w-4 h-4" /> {hotel.rating}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Near By Hotels */}
+        <div className="mt-3 space-y-6">
+          <div className="flex justify-between items-center px-4 sm:px-0">
+            <span className="text-xl font-bold pb-2">Room For Rent</span>
+
+            <div className="flex gap-2">
+              <ArrowLeft
+                onClick={() => scroll(NearByHotel, "left")}
+                className="cursor-pointer hover:scale-110 transition"
+              />
+              <ArrowRight
+                onClick={() => scroll(NearByHotel, "right")}
+                className="cursor-pointer hover:scale-110 transition"
+              />
+            </div>
+          </div>
+
+          {!perMonthHotels || perMonthHotels.length === 0 ? (
+            <div className="flex justify-center items-center py-10">
+              <SyncLoader color="#00c76a" size={10} speedMultiplier={0.6} />
+            </div>
+          ) : (
+            <div
+              ref={NearByHotel}
+              className="
+                           scroll-px-6  
+                           flex gap-4 overflow-x-auto pb-4
+                           -mx-4 px-4
+                           snap-x snap-proximity
+                           scrollbar-hide
+                         "
+            >
+              {perMonthHotels.map((hotel) => (
+                <div
+                  key={hotel.id}
+                  className="
+                            scroll-px-6  
+                            snap-start shrink-0
+                            w-[48%]        
+                            sm:w-[30%]
+                            md:w-[22%]
+                            lg:w-[19%]    
+                            rounded-lg bg-white cursor-pointer group
+                          "
+                >
+                  {/* IMAGE */}
+                  <div className="relative overflow-hidden rounded-xl">
+                    <img
+                      onClick={() => navigate(`/showhotel/${hotel.id}`)}
+                      src={hotel.places_image?.[0]?.image}
+                      className="
+                         aspect-square
+                         sm:aspect-[4/3]
+                         h-auto
+                         w-full
+                         object-cover
+                         group-hover:scale-105
+                         transition
+                       "
                       alt={hotel.place_name}
                     />
 
                     {uid && (
                       <button
                         onClick={() => AddFavorite(hotel.id)}
-                        className="absolute top-3 right-3 p-2 rounded-full 
-                      bg-gradient-to-br from-black/0 to-black/30"
+                        className="
+                              absolute top-3 right-3
+                               p-1 rounded-full
+                               bg-gradient-to-br from-black/0 to-black/30
+                                z-10
+                             "
                       >
                         <Heart
                           className={
                             hotel.fav_place === "YES"
-                              ? "text-red-500 fill-red-500  stroke-white stroke-[1.5]"
+                              ? "text-red-500 fill-red-500 stroke-white stroke-[1.5]"
                               : "text-white"
                           }
                         />
                       </button>
                     )}
+
+                    <button
+                      className="
+                         absolute top-3 left-3
+                         px-2 py-1
+                         text-[11px] font-semibold
+                         text-white
+                         rounded-full
+                         bg-gradient-to-br from-black/0 to-black/80
+                         z-10
+                       "
+                    >
+                      Guest favourite
+                    </button>
                   </div>
 
-                  <div className="mt-2 space-y-1">
-                    <div className="flex justify-between">
-                      <h3 className="font-medium truncate">
+                  <div
+                    onClick={() => navigate(`/showhotel/${hotel.id}`)}
+                    className=" space-y-0.5 sm:space-y-1 p-2"
+                  >
+                    {/* Title + Rating */}
+                    <div className="">
+                      <h3 className="font-medium truncate text-sm sm:text-base">
                         {hotel.place_name}
                       </h3>
-                      <span className="text-sm">⭐ {hotel.rating}</span>
                     </div>
 
-                    <p className="text-gray-500 text-sm">{hotel.room_type}</p>
-                    <span className="flex">
-                      Guest
-                      <p className="font-bold ml-3 ">{hotel.maximum_guest}</p>
-                    </span>
-
-                    <p className="font-semibold">
-                      ₹{hotel.rent_per_night.toLocaleString()}
-                      <span className="font-normal text-gray-500">
-                        {" "}
-                        {hotel.rental_type}
+                    {/* Price */}
+                    <p className="font-semibold flex text-sm sm:text-base">
+                      ₹{hotel.rent_per_night?.toLocaleString()}
+                      <span className="font-normal text-gray-500 text-xs sm:text-sm ml-1">
+                        for
+                        {hotel.rental_type === "per_night"
+                          ? "1 night ."
+                          : "1 month"}
+                      </span>
+                      <span className="text-xs flex ml-2 gap-1 sm:text-sm">
+                        <Star className="w-4 h-4" /> {hotel.rating}
                       </span>
                     </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Hot Deals */}
+        <div className="pb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xl pl-4 font-bold pb-2">
+              Hot Deals Near You
+            </span>
+          </div>
+          <div
+            className="
+              flex gap-4 overflow-x-auto px-4
+              mt-3 scrollbar-hide
+              md:grid md:grid-cols-3 md:gap-6
+              md:overflow-visible
+            "
+          >
+            {hotDeals.map((deal) => (
+              <div
+                key={deal.id}
+                className="
+                   shrink-0
+                   w-[85%]          
+                   max-w-md
+                   md:w-auto      
+                   md:max-w-none
+                   rounded-2xl
+                   border
+                   bg-green-700
+                   shadow-sm
+                 "
+              >
+                {/* Card Body */}
+                <div className="flex gap-3 p-1">
+                  {/* Image */}
+                  <div className="w-24 shrink-0">
+                    <div className="aspect-square rounded-xl ">
+                      <img
+                        src={deal.image}
+                        alt={deal.title}
+                        className="w-full h-32 rounded-xl object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex flex-col justify-between flex-1">
+                    <div>
+                      <div className="flex justify-between items-start gap-2">
+                        <h3 className="font-semibold text-sm text-white truncate">
+                          {deal.title}
+                        </h3>
+
+                        <span className="shrink-0 text-[11px] font-semibold text-black bg-green-100 px-2 py-0.5 rounded-full">
+                          {deal.discount}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-white mt-1">{deal.desc}</p>
+                    </div>
+                    <div className="pt-2  flex justify-between">
+                      <div className="mt-4 flex">
+                        <Star className="w-4 h-4 mt-1 pr-1 text-white" />
+                        <p className="text-white">4.3</p>
+                      </div>
+
+                      <div>
+                        <button
+                          className="
+                        font-bold
+                        mt-3
+                        bg-white
+                        px-3 py-2
+                        w-fit
+                        text-xs
+                        font-semibold
+                        text-green-700
+                        rounded-tl-xl
+                        rounded-br-xl
+                      "
+                        >
+                          Grab Deal →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Most Booked */}
+        <div className="mt-3 space-y-6 relative z-10">
+          <div className="justify-between flex">
+            <div className="flex items-center gap-2 px-4 sm:px-0">
+              <span className="text-xl font-bold pb-2">Most Booked</span>
+            </div>
+            <div className="flex pr-4 gap-2">
+              <ArrowLeft onClick={() => scroll(mostBookedScrollRef, "left")} />
+              <ArrowRight
+                onClick={() => scroll(mostBookedScrollRef, "right")}
+              />
+            </div>
+          </div>
+
+          {!MostBookedhotels || MostBookedhotels.length === 0 ? (
+            <div className="flex justify-center items-center py-10">
+              <SyncLoader color="#00c76a" size={10} speedMultiplier={0.6} />
+            </div>
+          ) : (
+            <div
+              ref={mostBookedScrollRef}
+              className="
+                           flex gap-4 overflow-x-auto pb-4
+                            scroll-px-6  
+                           -mx-4 px-4
+                          snap-x snap-proximity  
+
+                           scrollbar-hide
+                         "
+            >
+              {MostBookedhotels.map((hotel) => (
+                <div
+                  key={hotel.id}
+                  className="
+                             snap-start shrink-0
+                             
+                             w-[78%]          /* mobile */
+                             sm:w-[calc(25%-12px)]  /* desktop: 4 cards */
+                             rounded-lg bg-white cursor-pointer group
+                           "
+                >
+                  {/* IMAGE */}
+                  <div className="relative overflow-hidden rounded-xl">
+                    <img
+                      onClick={() => navigate(`/showhotel/${hotel.id}`)}
+                      src={hotel.places_image?.[0]?.image}
+                      className="
+                          w-full object-cover
+                          aspect-[3/2]        /*  mobile → height kam */
+                          sm:aspect-[4/3]    /*  desktop */
+                          transition
+                          group-hover:scale-105
+                        "
+                      alt={hotel.place_name}
+                    />
+
+                    {/* ❤️ Heart (top-right) */}
+                    {uid && (
+                      <button
+                        onClick={() => AddFavorite(hotel.id)}
+                        className="
+                       absolute top-3 right-3
+                       p-1 rounded-full
+                       bg-black/40
+                       z-10
+                     "
+                      >
+                        <Heart
+                          className={
+                            hotel.fav_place === "YES"
+                              ? "text-red-500 fill-red-500 stroke-white stroke-[1.5]"
+                              : "text-white"
+                          }
+                        />
+                      </button>
+                    )}
+
+                    {/*  Hello text (bottom-left) */}
+                    <span
+                      className="
+                     absolute bottom-3 left-3
+                     text-xl font-semibold
+                     text-white
+                     px-2 py-1
+                     rounded-md
+                    
+                    "
+                    >
+                      Room in indore
+                    </span>
                   </div>
                 </div>
               ))}

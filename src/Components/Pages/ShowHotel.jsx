@@ -13,8 +13,9 @@ import {
   WashingMachine,
   Droplets,
   ArrowBigLeftIcon,
+  Heart,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -26,31 +27,32 @@ import {
   useLoadScript,
 } from "@react-google-maps/api";
 import { SyncLoader } from "react-spinners";
+import Login from "./Login";
+import SignUp from "./SignUp";
 
 const ShowHotel = () => {
   const navigate = useNavigate();
 
   // -------------------- Get Place Ditails -------------------------------------------------------------------------------
 
-  const [placeDitails, setPlaceDitails] = useState([]);
+  const [placeDitails, setPlaceDitails] = useState({});
   // console.log(placeDitails);
+  const images = placeDitails?.places_image || [];
   const maxGuests = placeDitails?.maximum_guest || 1;
 
   const { place_id } = useParams();
   const user_id = localStorage.getItem("user_id");
 
   useEffect(() => {
-    if (!place_id || !user_id) return;
-
+    if (!place_id) return;
     axios
       .get(`${BASE_URL}/get_place_details`, {
         params: {
           place_id: place_id,
-          user_id: user_id,
+          ...(user_id && { user_id: user_id }),
         },
       })
       .then((res) => {
-        // console.log("Place Details:", res.data.result);
         setPlaceDitails(res.data.result);
       })
       .catch((err) => {
@@ -59,8 +61,10 @@ const ShowHotel = () => {
 
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        // close dropdown
       }
     };
+
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [place_id, user_id]);
@@ -124,10 +128,11 @@ const ShowHotel = () => {
 
   // -------------------- Review -------------------------------------------------------------------------------
 
-  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(3);
+  const [showRatingModal, setRatingShowModal] = useState(false);
 
   const reviews = placeDitails?.rating_review || [];
-  const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 3);
+  const visibleReviews = reviews.slice(0, visibleCount);
 
   // -------------------- Map Location Ditails -------------------------------------------------------------------------------
 
@@ -147,22 +152,66 @@ const ShowHotel = () => {
 
   // console.log(mapCenter);
 
+  // -------------------- Login Model -------------------------------------------------------------------------------
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [signupOpen, setSignupOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  const [uid, setUid] = useState("");
+
+  useEffect(() => {
+    const user_id = localStorage.getItem("user_id");
+    setUid(user_id);
+    const pageRoute = localStorage.getItem("pageRoute");
+    // console.log(pageRoute);
+  });
+
+  //   ------------------------------------------- Add Favorites ----------------------------------------------------
+
+  const AddFavorite = async (place_id) => {
+    const user_id = localStorage.getItem("user_id");
+
+    setPlaceDitails((prev) => ({
+      ...prev,
+      fav_place: prev.fav_place === "YES" ? "NO" : "YES",
+    }));
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append("user_id", user_id);
+      formData.append("place_id", place_id);
+
+      await axios.post(`${BASE_URL}/add_remove_fav_place`, formData);
+    } catch (error) {
+      console.error(error);
+    }
+  };
   return (
     <div>
-      <div className="ml-5 cursor-pointer pt-2 flex pb-3">
-        <div
-          onClick={() => navigate(`/`)}
-          className="flex items-center gap-1 cursor-pointer"
-        >
-          <ArrowBigLeftIcon />
-          <span>Back</span>
-        </div>
-      </div>
       <div className="w-full max-w-6xl mx-auto px-4">
         {/* Title */}
-        <h1 className="text-2xl pt-3 font-semibold mb-4">
-          Mar Azul 1bhk in Candolim
-        </h1>
+        <div className="flex justify-between items-center pt-3 mb-4">
+          <h1 className="text-2xl font-semibold">Mar Azul 1bhk in Candolim</h1>
+
+          <div className="pt-3 cursor-pointer flex">
+            <button
+              onClick={() => AddFavorite(placeDitails.id)}
+              className="flex gap-2"
+            >
+              <Heart
+                className={
+                  placeDitails?.fav_place === "YES"
+                    ? "w-6 h-6 text-red-500 fill-red-500 stroke-red-500"
+                    : "w-6 h-6 text-black stroke-black"
+                }
+              />{" "}
+              <p>Save</p>
+            </button>
+          </div>
+        </div>
 
         {/* Gallery */}
         {!placeDitails || placeDitails.length === 0 ? (
@@ -171,40 +220,111 @@ const ShowHotel = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-2xl overflow-hidden">
-            {/* Left big image */}
-            <div className="h-[420px]">
-              <img
-                src={placeDitails?.places_image?.[0]?.image}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </div>
+            {/* LEFT BIG IMAGE */}
+            {images[0] && (
+              <div className="h-[420px]">
+                <img
+                  src={images[0].image}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
 
-            {/* Right grid */}
-            <div className="grid grid-cols-2 gap-2 relative">
-              {placeDitails?.places_image?.slice(1, 5)?.map((img, index) => (
-                <div key={index} className="h-[209px]">
-                  <img
-                    src={img.image}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
+            {/* RIGHT SIDE */}
+            {images.length > 1 && (
+              <div
+                className={`relative ${
+                  images.length >= 4
+                    ? "grid grid-cols-2 gap-2"
+                    : "flex flex-col gap-2"
+                }`}
+              >
+                {/* ===== 2 IMAGES ===== */}
+                {images.length === 2 && (
+                  <div className="h-[420px]">
+                    <img
+                      src={images[1].image}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
 
-              {/* Show all photos button */}
-              {/* <button className="absolute bottom-4 right-4 bg-white text-sm font-medium px-4 py-2 rounded-lg shadow flex items-center gap-2">
-              <span className="grid grid-cols-3 gap-[2px]">
-                <span className="w-1.5 h-1.5 bg-black rounded-sm" />
-                <span className="w-1.5 h-1.5 bg-black rounded-sm" />
-                <span className="w-1.5 h-1.5 bg-black rounded-sm" />
-                <span className="w-1.5 h-1.5 bg-black rounded-sm" />
-                <span className="w-1.5 h-1.5 bg-black rounded-sm" />
-                <span className="w-1.5 h-1.5 bg-black rounded-sm" />
-              </span>
-              Show all photos
-            </button> */}
-            </div>
+                {/* ===== 3 IMAGES ===== */}
+                {images.length === 3 && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="h-[180px] sm:h-[210px] md:h-[420px]">
+                        <img
+                          src={images[1].image}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div className="h-[180px] sm:h-[210px] md:h-[420px]">
+                        <img
+                          src={images[2].image}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* ===== 4 IMAGES ===== */}
+                {images.length === 4 && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="h-[204px]">
+                        <img
+                          src={images[1].image}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="h-[204px]">
+                        <img
+                          src={images[2].image}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Third image full width below */}
+                    <div className="h-[204px]">
+                      <img
+                        src={images[2].image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* ===== 4 OR MORE IMAGES ===== */}
+                {images.length >= 4 &&
+                  images.slice(1, 5).map((img, index) => (
+                    <div key={index} className="h-[209px]">
+                      <img
+                        src={img.image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+
+                {/* Show All Button */}
+                {images.length > 4 && (
+                  <button className="absolute bottom-4 right-4 bg-white text-sm font-medium px-4 py-2 rounded-lg shadow">
+                    Show all photos
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -297,87 +417,93 @@ const ShowHotel = () => {
             <div className="lg:col-span-1">
               <div className=" border rounded-2xl shadow-lg p-6">
                 <div className="mb-4">
-                  <span className="text-2xl font-semibold">
+                  <span className="text-2xl underline font-semibold">
                     ₹{placeDitails.rent_per_night}
-                  </span>
-                  <span className="text-gray-500 ml-1">
-                    {placeDitails.rental_type}
+                  </span>{" "}
+                  for
+                  <span className=" font-bold  ml-1">
+                    {placeDitails.rental_type === "per_night"
+                      ? "1 night"
+                      : "1 month"}
                   </span>
                 </div>
+                <div className="border-2  border-zinc-600 rounded-xl">
+                  <div className="relative grid grid-cols-2 gap-4 border-b-2 border-zinc-600  p-1">
+                    {/* Vertical Line */}
+                    <div className="absolute left-1/2 top-0.5 bottom-4 h-[50px] w-[2px] bg-zinc-700"></div>
 
-                <div className="grid grid-cols-2 gap-4 border rounded-xl p-4">
-                  {/* Check-in */}
-                  <div>
-                    <p className="text-sm text-gray-500">Check-in</p>
-                    <DatePicker
-                      selected={startDate}
-                      onChange={(date) => {
-                        setstartDate(date);
-                        setendDate(null);
-                      }}
-                      minDate={new Date()}
-                      filterDate={(date) => !isDateDisabled(date)}
-                      placeholderText="Select date"
-                      className="w-full text-sm font-medium outline-none cursor-pointer"
-                    />
+                    {/* Check-in */}
+                    <div className="pr-4">
+                      <p className="text-sm text-black">Check-in</p>
+                      <DatePicker
+                        selected={startDate}
+                        onChange={(date) => {
+                          setstartDate(date);
+                          setendDate(null);
+                        }}
+                        minDate={new Date()}
+                        filterDate={(date) => !isDateDisabled(date)}
+                        placeholderText="Select date"
+                        className="w-full text-sm font-medium outline-none cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Check-out */}
+                    <div className="pl-4">
+                      <p className="text-sm text-black">Check-out</p>
+                      <DatePicker
+                        selected={endDate}
+                        onChange={(date) => setendDate(date)}
+                        minDate={startDate}
+                        filterDate={(date) => {
+                          if (!startDate) return false;
+
+                          let current = new Date(startDate);
+                          while (current <= date) {
+                            if (isDateDisabled(current)) return false;
+                            current.setDate(current.getDate() + 1);
+                          }
+                          return true;
+                        }}
+                        placeholderText="Select date"
+                        className="w-full text-sm font-medium outline-none cursor-pointer"
+                      />
+                    </div>
                   </div>
 
-                  {/* Check-out */}
-                  <div>
-                    <p className="text-sm text-gray-500">Check-out</p>
-                    <DatePicker
-                      selected={endDate}
-                      onChange={(date) => setendDate(date)}
-                      minDate={startDate}
-                      filterDate={(date) => {
-                        if (!startDate) return false;
+                  {/* GUESTS */}
+                  <div className=" rounded-xloverflow-hidden ">
+                    <div className="p-1">
+                      <p className="text-black text-sm ">Guests</p>
 
-                        let current = new Date(startDate);
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">
+                          {guests} {guests === 1 ? "guest" : "guests"}
+                        </span>
 
-                        while (current <= date) {
-                          if (isDateDisabled(current)) return false;
-                          current.setDate(current.getDate() + 1);
-                        }
-                        return true;
-                      }}
-                      placeholderText="Select date"
-                      className="w-full text-sm font-medium outline-none cursor-pointer"
-                    />
-                  </div>
-                </div>
+                        <div className="flex items-center gap-3">
+                          {/* MINUS */}
+                          <button
+                            onClick={() =>
+                              setGuests((prev) => Math.max(1, prev - 1))
+                            }
+                            disabled={guests === 1}
+                            className="w-8 h-8 flex items-center justify-center border rounded-full disabled:opacity-40"
+                          >
+                            −
+                          </button>
 
-                {/* GUESTS */}
-                <div className="border rounded-lg mt-2 overflow-hidden mb-4">
-                  <div className="p-3">
-                    <p className="text-gray-500 text-sm mb-1">Guests</p>
-
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">
-                        {guests} {guests === 1 ? "guest" : "guests"}
-                      </span>
-
-                      <div className="flex items-center gap-3">
-                        {/* MINUS */}
-                        <button
-                          onClick={() =>
-                            setGuests((prev) => Math.max(1, prev - 1))
-                          }
-                          disabled={guests === 1}
-                          className="w-8 h-8 flex items-center justify-center border rounded-full disabled:opacity-40"
-                        >
-                          −
-                        </button>
-
-                        {/* PLUS */}
-                        <button
-                          onClick={() =>
-                            setGuests((prev) => Math.min(maxGuests, prev + 1))
-                          }
-                          disabled={guests >= maxGuests}
-                          className="w-8 h-8 flex items-center justify-center border rounded-full disabled:opacity-40"
-                        >
-                          +
-                        </button>
+                          {/* PLUS */}
+                          <button
+                            onClick={() =>
+                              setGuests((prev) => Math.min(maxGuests, prev + 1))
+                            }
+                            disabled={guests >= maxGuests}
+                            className="w-8 h-8 flex items-center justify-center border rounded-full disabled:opacity-40"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -385,6 +511,15 @@ const ShowHotel = () => {
 
                 <button
                   onClick={() => {
+                    if (!uid) {
+                      localStorage.setItem(
+                        "pageRoute",
+                        `showhotel/${placeDitails.id}`,
+                      );
+                      setShowModal(true);
+                      return;
+                    }
+
                     navigate("/confirmation", {
                       state: {
                         placeDitails,
@@ -394,7 +529,7 @@ const ShowHotel = () => {
                       },
                     });
                   }}
-                  className="w-full bg-green-700 hover:bg-green-800 text-white py-3 rounded-lg font-semibold"
+                  className="w-full mt-3 bg-green-800 hover:bg-green-700 text-white py-3 rounded-full font-semibold"
                 >
                   Reserve
                 </button>
@@ -406,12 +541,32 @@ const ShowHotel = () => {
         <div className="max-w-6xl mx-auto px-4">
           {/* Heading */}
           <div className="text-center mb-8">
-            <div className="flex justify-center items-center gap-2 text-3xl font-semibold">
-              {placeDitails?.rating}
+            <div className="flex items-center justify-center gap-6 text-3xl font-semibold">
+              {/* Left Patti */}
+              <div className="mt-4">
+                <img
+                  src="https://i.ibb.co/vxcpZKbt/78b7687c-5acf-4ef8-a5ea-eda732ae3b2f.avif"
+                  className="w-16 h-28"
+                  alt=""
+                />
+              </div>
+
+              {/* Rating */}
+              <span className="tracking-wide">{placeDitails?.rating}</span>
+
+              {/* Right Patti */}
+              <div className="mt-4">
+                <img
+                  src="https://i.ibb.co/pvWTwypX/b4005b30-79ff-4287-860c-67829ecd7412.avif"
+                  className="w-16 h-28"
+                  alt=""
+                />
+              </div>
             </div>
+
             <h2 className="text-xl font-semibold mt-2">Guest Reviews</h2>
             <p className="text-gray-500 text-sm mt-1">
-              This home is a highly rated based on ratings,reviews
+              This home is highly rated based on ratings & reviews
             </p>
           </div>
 
@@ -423,7 +578,7 @@ const ShowHotel = () => {
               return (
                 <div
                   key={index}
-                  className="border rounded-xl p-5 bg-white shadow-sm"
+                  className="border rounded-xl p-4 bg-white shadow-sm"
                 >
                   <div className="flex items-start gap-3 mb-3">
                     <img
@@ -437,6 +592,7 @@ const ShowHotel = () => {
                         {item?.user_details?.first_name}{" "}
                         {item?.user_details?.last_name}
                       </h4>
+                      <p className="text-sm">{item?.user_details?.date_time}</p>
 
                       <div className="flex items-center gap-1">
                         <span className="text-sm text-gray-500">
@@ -484,15 +640,27 @@ const ShowHotel = () => {
             })}
           </div>
 
-          {/* Show all reviews */}
-          {reviews.length > 3 && (
-            <button
-              onClick={() => setShowAllReviews(!showAllReviews)}
-              className="w-full mt-8 py-3 bg-gray-200 rounded-lg text-sm font-medium hover:bg-gray-300 transition"
-            >
-              {showAllReviews ? "Show less reviews" : "Show all reviews"}
-            </button>
-          )}
+          <div className="flex gap-4 mt-8">
+            {/* Toggle More / Cancel More */}
+            {reviews.length > 3 && (
+              <button
+                onClick={() => setVisibleCount((prev) => (prev === 3 ? 6 : 3))}
+                className="px-6 py-2 bg-gray-200 rounded-lg text-sm font-medium hover:bg-gray-300 transition"
+              >
+                {visibleCount === 3 ? "More reviews" : "Cancel more"}
+              </button>
+            )}
+
+            {/* All Reviews Button */}
+            {reviews.length > 0 && (
+              <button
+                onClick={() => setRatingShowModal(true)}
+                className="px-6 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition"
+              >
+                All reviews
+              </button>
+            )}
+          </div>
 
           {/* Location */}
           <div className="mt-10 border-t pt-6 pb-4">
@@ -521,6 +689,151 @@ const ShowHotel = () => {
           </div>
         </div>
       </div>
+
+      {showRatingModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white w-[90%] md:w-[70%] max-h-[80vh] overflow-y-auto rounded-2xl p-6 relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setRatingShowModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-black"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-xl font-semibold mb-6">All Reviews</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {reviews.map((item, index) => {
+                const rating = Number(item?.rating || 0);
+
+                return (
+                  <div
+                    key={index}
+                    className="border rounded-xl p-3 bg-white shadow-sm"
+                  >
+                    <div className="flex items-start gap-3 mb-3">
+                      {/* User Image */}
+                      <img
+                        src={item?.user_details?.image}
+                        alt=""
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+
+                      <div>
+                        <h4 className="font-medium">
+                          {item?.user_details?.first_name}{" "}
+                          {item?.user_details?.last_name}
+                        </h4>
+                        <p className="text-sm">{item?.date_time}</p>
+                        {/* Rating + Stars */}
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm text-gray-500">
+                            {item?.rating}
+                          </span>
+
+                          {[1, 2, 3, 4, 5].map((i) => {
+                            if (rating >= i) {
+                              return (
+                                <Star
+                                  key={i}
+                                  size={14}
+                                  className="text-yellow-400 fill-yellow-400"
+                                />
+                              );
+                            } else if (rating >= i - 0.5) {
+                              return (
+                                <StarHalf
+                                  key={i}
+                                  size={14}
+                                  className="text-yellow-400 fill-yellow-400"
+                                />
+                              );
+                            } else {
+                              return (
+                                <Star
+                                  key={i}
+                                  size={14}
+                                  className="text-gray-300"
+                                />
+                              );
+                            }
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Date */}
+                      <span className="ml-auto text-xs text-gray-400">
+                        {item?.date}
+                      </span>
+                    </div>
+
+                    {/* Feedback */}
+                    <p className="text-sm text-gray-700">{item?.feedback}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="relative bg-white rounded-xl p-6 w-[90%] max-w-md">
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-3 right-3 text-gray-600 hover:text-black text-lg font-bold"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-lg font-semibold mb-2 text-center">
+              Login Required
+            </h2>
+
+            <p className="text-sm text-gray-600 mb-6 text-center">
+              Reservation karne ke liye login karna zaroori hai.
+            </p>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => {
+                  setLoginOpen(true);
+                  setShowModal(false);
+                }}
+                className="px-5 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-sm"
+              >
+                Login
+              </button>
+
+              <button
+                onClick={() => setSignupOpen(true)}
+                className="px-5 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-sm"
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Login Modal */}
+      <Login
+        isOpen={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onLoginSuccess={() => {
+          setIsLoggedIn(true);
+          setLoginOpen(false);
+        }}
+      />
+
+      {/* Signup Modal */}
+      <SignUp
+        isOpen={signupOpen}
+        onClose={() => setSignupOpen(false)}
+        openLogin={() => setLoginOpen(true)}
+      />
     </div>
   );
 };

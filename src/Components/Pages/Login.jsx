@@ -31,7 +31,6 @@ const Login = ({ isOpen, onClose, onLoginSuccess }) => {
 
   //---------------------------------------- Get Current Location --------------------------------------------------------
 
-
   const getCurrentLocation = () => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -65,7 +64,6 @@ const Login = ({ isOpen, onClose, onLoginSuccess }) => {
 
   //   ---------------------------------------- Login --------------------------------------------------------
 
-
   const handleLogin = async () => {
     if (!loginData.email || !loginData.password) {
       alert("Email and password required");
@@ -76,26 +74,18 @@ const Login = ({ isOpen, onClose, onLoginSuccess }) => {
       setLoading(true);
 
       const location = await getCurrentLocation();
-      // console.log(location.lat);
-      // console.log(location.lon);
 
-      const res = await axios.post(
-        `${BASE_URL}/login`,
-        null,
-        {
-          params: {
-            email: loginData.email,
-            password: loginData.password,
-            lat: location.lat,
-            lon: location.lon,
-            // lat: 22.343445,
-            // lon: 27.365564,
-            register_id: loginData.register_id,
-            type: loginData.type,
-            ios_register_id: loginData.ios_register_id,
-          },
+      const res = await axios.post(`${BASE_URL}/login`, null, {
+        params: {
+          email: loginData.email,
+          password: loginData.password,
+          lat: location.lat,
+          lon: location.lon,
+          register_id: loginData.register_id,
+          type: loginData.type,
+          ios_register_id: loginData.ios_register_id,
         },
-      );
+      });
 
       // console.log(res);
 
@@ -111,7 +101,14 @@ const Login = ({ isOpen, onClose, onLoginSuccess }) => {
         onLoginSuccess(res.data.result);
 
         setTimeout(() => {
-          Navigate("/");
+          const pageRoute = localStorage.getItem("pageRoute");
+
+          if (pageRoute) {
+            Navigate(`/${pageRoute}`);
+            localStorage.removeItem("pageRoute"); // optional but best practice
+          } else {
+            Navigate("/");
+          }
         }, 2000);
       } else {
         toast.error(res.data.message || "Invalid credentials", {

@@ -13,10 +13,6 @@ const Footer = () => {
             <li>Help Centre</li>
             <li>Get help with a safety issue</li>
             <li>AirCover</li>
-            <li>Anti-discrimination</li>
-            <li>Disability support</li>
-            <li>Cancellation options</li>
-            <li>Report neighbourhood concern</li>
           </ul>
         </div>
 
@@ -27,13 +23,6 @@ const Footer = () => {
             <li>Airbnb your home</li>
             <li>Airbnb your experience</li>
             <li>Airbnb your service</li>
-            <li>AirCover for Hosts</li>
-            <li>Hosting resources</li>
-            <li>Community forum</li>
-            <li>Hosting responsibly</li>
-            <li>Join a free hosting class</li>
-            <li>Find a co-host</li>
-            <li>Refer a host</li>
           </ul>
         </div>
 
@@ -44,8 +33,6 @@ const Footer = () => {
             <li>2025 Summer Release</li>
             <li>Newsroom</li>
             <li>Careers</li>
-            <li>Investors</li>
-            <li>Airbnb.org emergency stays</li>
           </ul>
         </div>
       </div>
@@ -73,9 +60,15 @@ const Footer = () => {
 
             {/* Social icons (placeholder) */}
             <div className="flex gap-3 text-lg">
-              <span><Earth/></span>
-              <span><X/></span>
-              <span><Camera/></span>
+              <span>
+                <Earth />
+              </span>
+              <span>
+                <X />
+              </span>
+              <span>
+                <Camera />
+              </span>
             </div>
           </div>
         </div>

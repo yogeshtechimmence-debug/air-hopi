@@ -88,6 +88,15 @@ const Confirmation = () => {
 
   // ---------------------------------------------- Booking Confirm ------------------------------
 
+  const formatDate = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   const [paymentMethod, setPaymentMethod] = useState("paypal"); // paypal | card
   const [showStripe, setShowStripe] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -102,8 +111,9 @@ const Confirmation = () => {
     payload.append("provider_id", placeDitails.provider_details.id);
     payload.append("place_id", placeDitails.id);
 
-    payload.append("start_date", checkIn);
-    payload.append("end_date", checkOut);
+    payload.append("start_date", formatDate(checkIn));
+    payload.append("end_date", formatDate(checkOut));
+
     payload.append("total_day", totalDays);
 
     payload.append("total_amount", finalPrice);
@@ -153,15 +163,6 @@ const Confirmation = () => {
 
   return (
     <div>
-      <div className="ml-5 cursor-pointer pt-2 flex pb-3 bg-gray-50">
-        <div
-          onClick={() => navigate(`/showhotel/${placeDitails.id}`)}
-          className="flex items-center gap-1 cursor-pointer"
-        >
-          <ArrowBigLeftIcon />
-          <span>Back</span>
-        </div>
-      </div>
       <div className="bg-gray-50">
         <div className="min-h-screen bg-gray-50 py-6 px-4">
           <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-2xl overflow-hidden flex flex-col lg:flex-row">
@@ -394,7 +395,8 @@ const Confirmation = () => {
                       placeDitails.rent_per_night,
                     );
 
-                    window.location.href = `https://techimmense.in/airhopi/webservice/paypalAPI?request_id=${placeDitails?.id}`;
+                    window.location.href = 
+                    `https://techimmense.in/airhopi/webservice/paypalAPI?request_id=${placeDitails?.id}&total_amount=${totalAmount}&currency=GBP`;
                   }
 
                   if (paymentMethod === "card") {

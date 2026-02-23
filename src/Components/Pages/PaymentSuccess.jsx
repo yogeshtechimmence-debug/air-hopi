@@ -37,7 +37,7 @@ const PaymentSuccess = () => {
 
     payload.append("payment_status", "Complete");
     payload.append("payment_type", "PayPal");
-    payload.append("payment_id", paymentId); // backend se aa sakta hai
+    payload.append("payment_id", paymentId); 
 
     payload.append("description", "Booking confirmed via PayPal");
 

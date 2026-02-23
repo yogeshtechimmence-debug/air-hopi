@@ -2,28 +2,28 @@ import React, { useEffect, useMemo, useState } from "react";
 import { GoogleMap, OverlayView, useLoadScript } from "@react-google-maps/api";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ArrowBigLeftIcon, Heart } from "lucide-react";
+import { ArrowBigLeftIcon, Heart, Star } from "lucide-react";
 import { BASE_URL } from "../Base Url/ApiUrl";
 
 const Location = () => {
   const location = useLocation();
   const { lat, lon, check_in, check_out, guest } = location.state || {};
-  // console.log(lat)
-  // console.log(lon)
-  // console.log(check_in)
-  // console.log(check_out)
-  // console.log(guest)
-
   const Navigate = useNavigate();
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [tilesLoaded, setTilesLoaded] = useState(false);
   const [hotels, setHotel] = useState([]);
+  const [uid, setUid] = useState("");
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: "AIzaSyAN3Lz2pT2ItRTkQ1MHCwHynGjmpDHhnt8",
   });
 
   const mapCenter = useMemo(() => ({ lat: lat, lng: lon }), []);
+
+  useEffect(() => {
+    const user_id = localStorage.getItem("user_id");
+    setUid(user_id);
+  });
 
   //   ---------------------------------------- Get Nearest Place --------------------------------------------------------
 
@@ -137,42 +137,44 @@ const Location = () => {
                   <img
                     onClick={() => Navigate(`/showhotel/${hotel.id}`)}
                     src={hotel.places_image?.[0]?.image}
-                    className="h-52 w-full object-cover group-hover:scale-105 transition"
+                    className="w-full aspect-square object-cover group-hover:scale-105 transition"
                     alt={hotel.place_name}
                   />
-
-                  <button
-                    onClick={() => AddFavorite(hotel.id)}
-                    className="absolute top-3 right-3 p-2 rounded-full 
-             bg-gradient-to-br from-black/0 to-black/30"
-                  >
-                    <Heart
-                      className={
-                        hotel.fav_place === "YES"
-                          ? "text-red-500 fill-red-500 stroke-white stroke-[1.5]"
-                          : "text-white"
-                      }
-                    />
-                  </button>
+                  {uid && (
+                    <button
+                      onClick={() => AddFavorite(hotel.id)}
+                      className="absolute top-3 right-3 p-2 rounded-full 
+                                        bg-gradient-to-br from-black/0 to-black/30"
+                    >
+                      <Heart
+                        className={
+                          hotel.fav_place === "YES"
+                            ? "text-red-500 fill-red-500  stroke-white stroke-[1.5]"
+                            : "text-white"
+                        }
+                      />
+                    </button>
+                  )}
                 </div>
 
                 <div className="mt-2 space-y-1">
-                  <div className="flex justify-between">
-                    <h3 className="font-medium truncate">{hotel.place_name}</h3>
-                    <span className="text-sm">⭐ {hotel.rating}</span>
+                  {/* Title + Rating */}
+                  <div className="">
+                    <h3 className="font-medium truncate text-sm sm:text-base">
+                      {hotel.place_name}
+                    </h3>
                   </div>
-
-                  <p className="text-gray-500 text-sm">{hotel.room_type}</p>
-                  <span className="flex">
-                    Guest
-                    <p className="font-bold ml-3 ">{hotel.maximum_guest}</p>
-                  </span>
-
-                  <p className="font-semibold">
-                    ₹{hotel.rent_per_night.toLocaleString()}
-                    <span className="font-normal text-gray-500">
-                      {" "}
-                      {hotel.rental_type}
+                  {/* Price */}
+                  <p className="font-semibold flex text-sm sm:text-base">
+                    ₹{hotel.rent_per_night?.toLocaleString()}
+                    <span className="font-normal text-gray-500 text-xs sm:text-sm ml-1">
+                      for
+                      {hotel.rental_type === "per_night"
+                        ? "1 night ."
+                        : "1 month"}
+                    </span>
+                    <span className="text-xs flex ml-2 gap-1 sm:text-sm">
+                      <Star className="w-4 h-4" /> {hotel.rating}
                     </span>
                   </p>
                 </div>

@@ -13,7 +13,12 @@ import Login from "./Login";
 import SignUp from "./SignUp";
 
 const Navbar = () => {
-  const [uid, setUid] = useState(localStorage.getItem("user_id"));
+  const [uid, setUid] = useState(null);
+
+  useEffect(() => {
+    const user_id = localStorage.getItem("user_id");
+    setUid(user_id);
+  });
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -54,10 +59,13 @@ const Navbar = () => {
 
           {/* Right Side */}
           <div className="relative" ref={dropdownRef}>
-            {!isLoggedIn ? (
+            {!uid ? (
               <div className="flex gap-3">
                 <button
-                  onClick={() => setLoginOpen(true)}
+                  onClick={() => {
+                    localStorage.removeItem("pageRoute");
+                    setLoginOpen(true);
+                  }}
                   className="px-4 py-2 border rounded-full text-sm"
                 >
                   Login
@@ -80,7 +88,7 @@ const Navbar = () => {
             )}
 
             {/* Dropdown */}
-            {menuOpen && isLoggedIn && (
+            {menuOpen && uid && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border z-50">
                 <ul className="py-2 text-sm">
                   <li
