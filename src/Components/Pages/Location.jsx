@@ -15,7 +15,7 @@ const Location = () => {
   const [uid, setUid] = useState("");
 
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: "AIzaSyAN3Lz2pT2ItRTkQ1MHCwHynGjmpDHhnt8",
+    googleMapsApiKey: "AIzaSyB4kw_LEdrl0TxT1xesth1StJ2pQRGDMrA",
   });
 
   const mapCenter = useMemo(() => ({ lat: lat, lng: lon }), []);

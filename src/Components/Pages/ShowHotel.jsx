@@ -137,7 +137,7 @@ const ShowHotel = () => {
   // -------------------- Map Location Ditails -------------------------------------------------------------------------------
 
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: "AIzaSyAN3Lz2pT2ItRTkQ1MHCwHynGjmpDHhnt8",
+    googleMapsApiKey: "AIzaSyB4kw_LEdrl0TxT1xesth1StJ2pQRGDMrA",
     libraries: ["places"],
   });
 
@@ -705,20 +705,18 @@ const ShowHotel = () => {
               {placeDitails.address}
             </p>
             <div className="h-[300px] w-full">
-              {isLoaded && mapCenter && (
+              {!isLoaded ? (
+                <div className="h-full w-full bg-gray-200 animate-pulse rounded-lg" />
+              ) : mapCenter ? (
                 <GoogleMap
                   zoom={17}
                   center={mapCenter}
                   mapContainerClassName="w-full h-full"
                 >
-                  <MarkerF
-                    position={mapCenter}
-                    size={50}
-                    icon={{
-                      url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-                    }}
-                  />
+                  <MarkerF position={mapCenter} />
                 </GoogleMap>
+              ) : (
+                <p className="text-sm text-gray-500">Location not available</p>
               )}
             </div>
           </div>
