@@ -112,6 +112,23 @@ const ProfilePage = () => {
       });
   }, []);
 
+  //  -------------------- upadet data  ---------------------------------
+
+  useEffect(() => {
+    if (profileData) {
+      setFormData({
+        user_id: user_id,
+        first_name: profileData.first_name || "",
+        last_name: profileData.last_name || "",
+        mobile: profileData.mobile || "",
+        address: profileData.address || "",
+        lat: profileData.lat || "",
+        lon: profileData.lon || "",
+        mobile_with_code: profileData.mobile_with_code || "",
+        image: null,
+      });
+    }
+  }, [profileData]);
   //  -------------------- CHANGED PASSWORD ---------------------------------
 
   const handleChangePassword = (e) => {
@@ -152,15 +169,6 @@ const ProfilePage = () => {
 
   return (
     <div>
-      <div className="ml-5 cursor-pointer pt-2 flex pb-3">
-        <div
-          onClick={() => Navigate(-1)}
-          className="flex items-center gap-1 cursor-pointer"
-        >
-          <ArrowBigLeftIcon />
-          <span>Back</span>
-        </div>
-      </div>
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* LEFT TABS */}
@@ -256,12 +264,13 @@ const ProfilePage = () => {
 
             {/* UPDATE PROFILE */}
             {activeTab === "edit" && (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-2">
                 <div>
                   <label className="block text-sm mb-1">First Name</label>
                   <input
                     type="text"
                     name="first_name"
+                    value={formData.first_name}
                     onChange={handleChange}
                     className="w-full border rounded-lg px-4 py-2"
                   />
@@ -272,6 +281,7 @@ const ProfilePage = () => {
                   <input
                     type="text"
                     name="last_name"
+                    value={formData.last_name}
                     onChange={handleChange}
                     className="w-full border rounded-lg px-4 py-2"
                   />
@@ -282,6 +292,7 @@ const ProfilePage = () => {
                   <input
                     type="tel"
                     name="mobile"
+                    value={formData.mobile}
                     onChange={handleChange}
                     className="w-full border rounded-lg px-4 py-2"
                   />
@@ -292,6 +303,7 @@ const ProfilePage = () => {
                   <input
                     type="text"
                     name="address"
+                    value={formData.address}
                     onChange={handleChange}
                     className="w-full border rounded-lg px-4 py-2"
                   />

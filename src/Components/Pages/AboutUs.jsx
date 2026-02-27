@@ -7,7 +7,7 @@ const AboutUs = () => {
   const Navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("about");
   const [aboutData, setAboutData] = useState("");
-  console.log(aboutData);
+  // console.log(aboutData);
   useEffect(() => {
     axios
       .get("https://techimmense.in/airhopi/webservice/get_user_page")
@@ -23,15 +23,7 @@ const AboutUs = () => {
 
   return (
     <div>
-      <div className=" ml-5 cursor-pointer pt-2 flex pb-3">
-        <div
-          onClick={() => Navigate(-1)}
-          className="flex items-center gap-1 cursor-pointer"
-        >
-          <ArrowBigLeftIcon />
-          <span>Back</span>
-        </div>
-      </div>
+     
       <div className="bg-gray-50 min-h-screen">
         {/* TOP BUTTONS */}
         <div className="bg-white border-b">

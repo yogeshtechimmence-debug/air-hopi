@@ -15,7 +15,6 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../Base Url/ApiUrl";
-import { SyncLoader } from "react-spinners";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -27,9 +26,11 @@ const HomePage = () => {
   const [MostBookedhotels, setHotel] = useState([]);
   const [perNightHotels, setPerNightHotels] = useState([]);
   const [perMonthHotels, setPerMonthHotels] = useState([]);
+  const [BedForLet, setBedForLet] = useState([]);
 
   const [Currentlat, setCurrentlat] = useState("");
   const [Currentlon, setCurrentlon] = useState("");
+  const [CurrentCicyName, setCurrentCicyName] = useState("");
 
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
@@ -38,6 +39,7 @@ const HomePage = () => {
   const popularScrollRef = useRef(null);
   const mostBookedScrollRef = useRef(null);
   const NearByHotel = useRef(null);
+  const BedForLetRef = useRef(null);
 
   useEffect(() => {
     const user_id = localStorage.getItem("user_id");
@@ -66,11 +68,20 @@ const HomePage = () => {
           );
 
           const perMonth = result.filter(
-            (item) => item.rental_type === "per_month",
+            (item) =>
+              item.rental_type === "per_month" &&
+              item.room_type === "Single Room",
+          );
+
+          const bedForLet = result.filter(
+            (item) =>
+              item.rental_type === "per_month" &&
+              item.room_type === "Bed for let",
           );
 
           setPerNightHotels(perNight);
           setPerMonthHotels(perMonth);
+          setBedForLet(bedForLet);
         })
         .catch((err) => {
           console.log(err);
@@ -79,7 +90,7 @@ const HomePage = () => {
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
           localStorage.setItem("lat", lat);
@@ -87,6 +98,9 @@ const HomePage = () => {
 
           setCurrentlat(lat);
           setCurrentlon(lon);
+
+          const cityName = await getCityFromLatLng(lat, lon);
+          setCurrentCicyName(cityName);
 
           fetchNearestPlace(lat, lon);
         },
@@ -109,6 +123,28 @@ const HomePage = () => {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  //   ----------------------------------------- get Location name -------------------------------------------------------
+
+  const getCityFromLatLng = async (lat, lon) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
+      );
+
+      const data = await res.json();
+
+      const city =
+        data.address.city ||
+        data.address.town ||
+        data.address.village ||
+        data.address.state;
+
+      return city;
+    } catch (error) {
+      console.log("Reverse geocoding error:", error);
+    }
+  };
 
   //   ----------------------------------------- guest model -------------------------------------------------------
 
@@ -230,41 +266,43 @@ const HomePage = () => {
 
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [service, setService] = useState(null);
   const [SearchLat, setSearchLat] = useState("");
   const [SearchLon, setSearchLon] = useState("");
-
+  const serviceRef = useRef(null);
+  
   useEffect(() => {
-    const checkGoogle = () => {
+    const checkGoogle = setInterval(() => {
       if (window.google && window.google.maps && window.google.maps.places) {
-        setService(new window.google.maps.places.AutocompleteService());
-      } else {
-        setTimeout(checkGoogle, 200); // retry
+        serviceRef.current =
+          new window.google.maps.places.AutocompleteService();
+        clearInterval(checkGoogle);
       }
-    };
+    }, 300);
 
-    checkGoogle();
+    return () => clearInterval(checkGoogle);
   }, []);
 
   const handleSearch = (value) => {
     setQuery(value);
 
-    if (!value || !service) {
+    if (!value || !serviceRef.current) {
       setSuggestions([]);
       return;
     }
 
-    service.getPlacePredictions(
+    serviceRef.current.getPlacePredictions(
       {
         input: value,
         componentRestrictions: { country: "in" },
       },
       (predictions, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-          setSuggestions(predictions || []);
+        if (
+          status === window.google.maps.places.PlacesServiceStatus.OK &&
+          predictions
+        ) {
+          setSuggestions(predictions);
         } else {
           setSuggestions([]);
-          console.error("Autocomplete error:", status);
         }
       },
     );
@@ -339,6 +377,21 @@ const HomePage = () => {
     });
   };
 
+  //   ---------------------------------- hotel price icon manage  --------------------------------------------------------------
+
+  const getCurrencySymbol = (currency) => {
+    switch (currency) {
+      case "GBP":
+        return "£";
+      case "CAD":
+        return "C$";
+      case "EUR":
+        return "€";
+      default:
+        return "₹"; // fallback
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 overflow-hidden">
       <div className="min-h-screen bg-white items-start justify-center">
@@ -346,9 +399,14 @@ const HomePage = () => {
           className="text-center h-28 pt-4 text-4xl font-bold text-gray-600 
                 bg-gradient-to-b from-black/30 to-bg-gray-100"
         >
-          air hopi
+          Find Your Perfect Stay
+          <p className="text-sm mt-2">
+            Book hotel, resorts, and more across the world
+          </p>
         </div>
-        <div className="w-full flex justify-center z-50">
+
+        {/* Search baar */}
+        <div className="w-full mt-4 flex justify-center z-50">
           <div
             className="
                        relative bg-white shadow-lg border
@@ -402,7 +460,7 @@ const HomePage = () => {
                   endDate={checkOut}
                   minDate={new Date()}
                   inputMode="none"
-                  placeholderText="Select"
+                  placeholderText="DD/MM/YY"
                   className="w-full text-[9px] sm:text-xs font-medium outline-none cursor-pointer"
                 />
               </div>
@@ -420,7 +478,7 @@ const HomePage = () => {
                   endDate={checkOut}
                   minDate={checkIn}
                   inputMode="none"
-                  placeholderText="Select"
+                  placeholderText="DD/MM/YY"
                   className="w-full text-[9px] sm:text-xs font-medium outline-none cursor-pointer"
                 />
               </div>
@@ -504,24 +562,23 @@ const HomePage = () => {
                 >
                   <Navigation size={16} /> Get Current Location
                 </button>
+
                 {/* Locations list */}
-                <div className="max-h-60 overflow-y-auto">
-                  {suggestions.length > 0 && (
-                    <ul className="absolute z-20 w-full bg-white border rounded-lg mt-1 shadow-lg max-h-60 overflow-auto">
-                      {suggestions.map((item) => (
-                        <li
-                          key={item.place_id}
-                          onClick={() =>
-                            getLatLng(item.place_id, item.description)
-                          }
-                          className="px-4 py-2 cursor-pointer hover:bg-blue-50"
-                        >
-                          {item.description}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                {suggestions.length > 0 && (
+                  <ul className="w-full border rounded-lg mt-2 shadow-sm max-h-60 overflow-y-auto">
+                    {suggestions.map((item) => (
+                      <li
+                        key={item.place_id}
+                        onClick={() =>
+                          getLatLng(item.place_id, item.description)
+                        }
+                        className="px-4 py-2 cursor-pointer hover:bg-blue-50"
+                      >
+                        {item.description}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 
@@ -556,7 +613,7 @@ const HomePage = () => {
         <div className="mt-3 space-y-6 relative z-10">
           <div className="flex justify-between items-center gap-2 px-4 sm:px-0">
             <span className="text-xl font-bold pb-2">
-              Popular stays in indore
+              Popular stays in {CurrentCicyName}
             </span>
             <div className="flex  gap-2">
               <ArrowLeft onClick={() => scroll(popularScrollRef, "left")} />
@@ -565,8 +622,37 @@ const HomePage = () => {
           </div>
 
           {!perNightHotels || perNightHotels.length === 0 ? (
-            <div className="flex justify-center items-center py-10">
-              <SyncLoader color="#00c76a" size={10} speedMultiplier={0.6} />
+            <div
+              className="
+                     flex gap-4 overflow-x-auto pb-4
+                     -mx-4 px-4
+                     scrollbar-hide
+                   "
+            >
+              {[...Array(5)].map((_, index) => (
+                <div
+                  key={index}
+                  className="
+                      shrink-0
+                      w-[48%]
+                      sm:w-[30%]
+                      md:w-[22%]
+                      lg:w-[19%]
+                      rounded-lg bg-white
+                    "
+                >
+                  <div className="animate-pulse">
+                    {/* Image Skeleton */}
+                    <div className="aspect-square sm:aspect-[4/3] w-full bg-gray-300 rounded-xl"></div>
+
+                    {/* Content Skeleton */}
+                    <div className="p-2 space-y-2">
+                      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                      <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div
@@ -589,11 +675,11 @@ const HomePage = () => {
                             sm:w-[30%]
                             md:w-[22%]
                             lg:w-[19%]    
-                            rounded-lg bg-white cursor-pointer group
+                            rounded-2xl bg-white cursor-pointer group
                           "
                 >
                   {/* IMAGE */}
-                  <div className="relative overflow-hidden rounded-xl">
+                  <div className="relative overflow-hidden rounded-2xl">
                     <img
                       onClick={() => navigate(`/showhotel/${hotel.id}`)}
                       src={hotel.places_image?.[0]?.image}
@@ -607,16 +693,16 @@ const HomePage = () => {
                       >
                         <Heart
                           className={
-                            hotel.fav_place === "YES"
+                            hotel?.fav_place === "YES"
                               ? "text-red-500 fill-red-500 stroke-white stroke-[1.5]"
                               : "text-white"
                           }
                         />
                       </button>
                     )}
-                    <button className=" absolute top-3 left-3 px-2 py-1 text-[11px] font-semibold text-white rounded-full bg-gradient-to-br from-black/0 to-black/80 z-[1] ">
+                    {/* <button className=" absolute top-3 left-3 px-2 py-1 text-[11px] font-semibold text-white rounded-full bg-gradient-to-br from-black/0 to-black/80 z-[1] ">
                       Guest favourite
-                    </button>
+                    </button> */}
                   </div>
                   <div
                     onClick={() => navigate(`/showhotel/${hotel.id}`)}
@@ -630,15 +716,19 @@ const HomePage = () => {
                     </div>
                     {/* Price */}
                     <p className="font-semibold flex text-sm sm:text-base">
-                      ₹{hotel.rent_per_night?.toLocaleString()}
-                      <span className="font-normal text-gray-500 text-xs sm:text-sm ml-1">
-                        for
+                      <span>
+                        {getCurrencySymbol(hotel.currency)}
+                        {hotel.rent_per_night?.toLocaleString()}
+                      </span>
+                      <span className="font-normal mt-0.5 text-gray-500 text-xs sm:text-sm ml-1">
+                        /
                         {hotel.rental_type === "per_night"
                           ? "1 night ."
                           : "1 month"}
                       </span>
-                      <span className="text-xs flex ml-2 gap-1 sm:text-sm">
-                        <Star className="w-4 h-4" /> {hotel.rating}
+                      <span className="text-xs mt-0.5 flex ml-2 gap-1 sm:text-sm">
+                        <Star className="w-4 h-4 text-green-600 fill-green-600" />
+                        {hotel.rating}
                       </span>
                     </p>
                   </div>
@@ -666,8 +756,37 @@ const HomePage = () => {
           </div>
 
           {!perMonthHotels || perMonthHotels.length === 0 ? (
-            <div className="flex justify-center items-center py-10">
-              <SyncLoader color="#00c76a" size={10} speedMultiplier={0.6} />
+            <div
+              className="
+                     flex gap-4 overflow-x-auto pb-4
+                     -mx-4 px-4
+                     scrollbar-hide
+                   "
+            >
+              {[...Array(5)].map((_, index) => (
+                <div
+                  key={index}
+                  className="
+                      shrink-0
+                      w-[48%]
+                      sm:w-[30%]
+                      md:w-[22%]
+                      lg:w-[19%]
+                      rounded-lg bg-white
+                    "
+                >
+                  <div className="animate-pulse">
+                    {/* Image Skeleton */}
+                    <div className="aspect-square sm:aspect-[4/3] w-full bg-gray-300 rounded-xl"></div>
+
+                    {/* Content Skeleton */}
+                    <div className="p-2 space-y-2">
+                      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                      <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div
@@ -694,7 +813,7 @@ const HomePage = () => {
                           "
                 >
                   {/* IMAGE */}
-                  <div className="relative overflow-hidden rounded-xl">
+                  <div className="relative overflow-hidden rounded-2xl">
                     <img
                       onClick={() => navigate(`/showhotel/${hotel.id}`)}
                       src={hotel.places_image?.[0]?.image}
@@ -758,15 +877,180 @@ const HomePage = () => {
 
                     {/* Price */}
                     <p className="font-semibold flex text-sm sm:text-base">
-                      ₹{hotel.rent_per_night?.toLocaleString()}
-                      <span className="font-normal text-gray-500 text-xs sm:text-sm ml-1">
-                        for
+                      <span>
+                        {getCurrencySymbol(hotel.currency)}
+                        {hotel.rent_per_night?.toLocaleString()}
+                      </span>
+                      <span className="font-normal mt-0.5 text-gray-500 text-xs sm:text-sm ml-1">
+                        /
                         {hotel.rental_type === "per_night"
                           ? "1 night ."
                           : "1 month"}
                       </span>
-                      <span className="text-xs flex ml-2 gap-1 sm:text-sm">
-                        <Star className="w-4 h-4" /> {hotel.rating}
+                      <span className="text-xs mt-0.5 flex ml-2 gap-1 sm:text-sm">
+                        <Star className="w-4 h-4 text-green-600 fill-green-600" />
+                        {hotel.rating}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Bed For Let */}
+        <div className="mt-3 space-y-6">
+          <div className="flex justify-between items-center px-4 sm:px-0">
+            <span className="text-xl font-bold pb-2">Bed For Let</span>
+
+            <div className="flex gap-2">
+              <ArrowLeft
+                onClick={() => scroll(BedForLetRef, "left")}
+                className="cursor-pointer hover:scale-110 transition"
+              />
+              <ArrowRight
+                onClick={() => scroll(BedForLetRef, "right")}
+                className="cursor-pointer hover:scale-110 transition"
+              />
+            </div>
+          </div>
+
+          {!BedForLet || BedForLet.length === 0 ? (
+            <div
+              className="
+                     flex gap-4 overflow-x-auto pb-4
+                     -mx-4 px-4
+                     scrollbar-hide
+                   "
+            >
+              {[...Array(5)].map((_, index) => (
+                <div
+                  key={index}
+                  className="
+                      shrink-0
+                      w-[48%]
+                      sm:w-[30%]
+                      md:w-[22%]
+                      lg:w-[19%]
+                      rounded-lg bg-white
+                    "
+                >
+                  <div className="animate-pulse">
+                    {/* Image Skeleton */}
+                    <div className="aspect-square sm:aspect-[4/3] w-full bg-gray-300 rounded-xl"></div>
+
+                    {/* Content Skeleton */}
+                    <div className="p-2 space-y-2">
+                      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                      <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              ref={BedForLetRef}
+              className="
+                           scroll-px-6  
+                           flex gap-4 overflow-x-auto pb-4
+                           -mx-4 px-4
+                           snap-x snap-proximity
+                           scrollbar-hide
+                         "
+            >
+              {BedForLet.map((hotel) => (
+                <div
+                  key={hotel.id}
+                  className="
+                            scroll-px-6  
+                            snap-start shrink-0
+                            w-[48%]        
+                            sm:w-[30%]
+                            md:w-[22%]
+                            lg:w-[19%]    
+                            rounded-lg bg-white cursor-pointer group
+                          "
+                >
+                  {/* IMAGE */}
+                  <div className="relative overflow-hidden rounded-2xl">
+                    <img
+                      onClick={() => navigate(`/showhotel/${hotel.id}`)}
+                      src={hotel.places_image?.[0]?.image}
+                      className="
+                         aspect-square
+                         sm:aspect-[4/3]
+                         h-auto
+                         w-full
+                         object-cover
+                         group-hover:scale-105
+                         transition
+                       "
+                      alt={hotel.place_name}
+                    />
+
+                    {uid && (
+                      <button
+                        onClick={() => AddFavorite(hotel.id)}
+                        className="
+                              absolute top-3 right-3
+                               p-1 rounded-full
+                               bg-gradient-to-br from-black/0 to-black/30
+                                z-10
+                             "
+                      >
+                        <Heart
+                          className={
+                            hotel.fav_place === "YES"
+                              ? "text-red-500 fill-red-500 stroke-white stroke-[1.5]"
+                              : "text-white"
+                          }
+                        />
+                      </button>
+                    )}
+
+                    <button
+                      className="
+                         absolute top-3 left-3
+                         px-2 py-1
+                         text-[11px] font-semibold
+                         text-white
+                         rounded-full
+                         bg-gradient-to-br from-black/0 to-black/80
+                         z-10
+                       "
+                    >
+                      Guest favourite
+                    </button>
+                  </div>
+
+                  <div
+                    onClick={() => navigate(`/showhotel/${hotel.id}`)}
+                    className=" space-y-0.5 sm:space-y-1 p-2"
+                  >
+                    {/* Title + Rating */}
+                    <div className="">
+                      <h3 className="font-medium truncate text-sm sm:text-base">
+                        {hotel.place_name}
+                      </h3>
+                    </div>
+
+                    {/* Price */}
+                    <p className="font-semibold flex text-sm sm:text-base">
+                      <span>
+                        {getCurrencySymbol(hotel.currency)}
+                        {hotel.rent_per_night?.toLocaleString()}
+                      </span>
+                      <span className="font-normal mt-0.5 text-gray-500 text-xs sm:text-sm ml-1">
+                        /
+                        {hotel.rental_type === "per_night"
+                          ? "1 night ."
+                          : "1 month"}
+                      </span>
+                      <span className="text-xs mt-0.5 flex ml-2 gap-1 sm:text-sm">
+                        <Star className="w-4 h-4 text-green-600 fill-green-600" />
+                        {hotel.rating}
                       </span>
                     </p>
                   </div>
@@ -814,7 +1098,7 @@ const HomePage = () => {
                       <img
                         src={deal.image}
                         alt={deal.title}
-                        className="w-full h-32 rounded-xl object-cover"
+                        className="w-full h-32 rounded-2xl object-cover"
                       />
                     </div>
                   </div>
@@ -881,8 +1165,34 @@ const HomePage = () => {
           </div>
 
           {!MostBookedhotels || MostBookedhotels.length === 0 ? (
-            <div className="flex justify-center items-center py-10">
-              <SyncLoader color="#00c76a" size={10} speedMultiplier={0.6} />
+            <div
+              className="
+                   flex gap-4 overflow-x-auto pb-4
+                   -mx-4 px-4
+                   scrollbar-hide
+                 "
+            >
+              {[...Array(4)].map((_, index) => (
+                <div
+                  key={index}
+                  className="
+                     shrink-0
+                     w-[78%]           
+                     sm:w-[calc(25%-12px)] 
+                     rounded-lg bg-white
+                   "
+                >
+                  <div className="animate-pulse">
+                    {/* Image Skeleton */}
+                    <div className="aspect-[3/2] sm:aspect-[4/3] w-full bg-gray-300 rounded-xl"></div>
+
+                    {/* Optional bottom text skeleton */}
+                    <div className="p-3">
+                      <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div
@@ -908,7 +1218,7 @@ const HomePage = () => {
                            "
                 >
                   {/* IMAGE */}
-                  <div className="relative overflow-hidden rounded-xl">
+                  <div className="relative overflow-hidden rounded-2xl">
                     <img
                       onClick={() => navigate(`/showhotel/${hotel.id}`)}
                       src={hotel.places_image?.[0]?.image}
@@ -922,7 +1232,7 @@ const HomePage = () => {
                       alt={hotel.place_name}
                     />
 
-                    {/* ❤️ Heart (top-right) */}
+                    {/*  Heart (top-right) */}
                     {uid && (
                       <button
                         onClick={() => AddFavorite(hotel.id)}
@@ -954,7 +1264,7 @@ const HomePage = () => {
                     
                     "
                     >
-                      Room in indore
+                      Room in {CurrentCicyName}
                     </span>
                   </div>
                 </div>

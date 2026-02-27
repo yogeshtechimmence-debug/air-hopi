@@ -113,7 +113,7 @@ const StripeCheckout = ({
       <button
         onClick={handlePayment}
         disabled={loading}
-        className="w-full bg-green-700 text-white py-3 rounded-xl disabled:opacity-60"
+        className="w-full bg-green-800 text-white py-3 rounded-xl disabled:opacity-60"
       >
         {loading ? "Processing..." : `Pay ₹${finalPrice}`}
       </button>

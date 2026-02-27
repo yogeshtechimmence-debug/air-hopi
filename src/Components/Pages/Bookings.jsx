@@ -33,7 +33,7 @@ const Bookings = () => {
         },
       })
       .then((res) => {
-        // console.log(res.data.result);
+        console.log(res.data.result);
         setBooking(res.data.result || []);
       })
       .catch((err) => {
@@ -92,50 +92,63 @@ const Bookings = () => {
 
   return (
     <div>
-      <div className="ml-5 cursor-pointer pt-2 flex pb-3">
-        <div
-          onClick={() => Navigate(-1)}
-          className="flex items-center gap-1 cursor-pointer"
-        >
-          <ArrowBigLeftIcon />
-          <span>Back</span>
-        </div>
-      </div>
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Tabs */}
-        <div className="flex gap-4 mb-8">
-          <button
-            onClick={() => setActiveTab("bookings")}
-            className={`flex-1 py-3 rounded-full font-medium ${
-              activeTab === "bookings"
-                ? "bg-green-700 text-white"
-                : "bg-gray-100"
-            }`}
-          >
-            Bookings
-          </button>
+        <div className="max-w-3xl justify-center mx-auto">
+          <div className="flex gap-4 mb-8">
+            <button
+              onClick={() => setActiveTab("bookings")}
+              className={`flex-1 py-3 rounded-full font-medium ${
+                activeTab === "bookings"
+                  ? "bg-green-700 text-white"
+                  : "bg-gray-100"
+              }`}
+            >
+              Bookings
+            </button>
 
-          <button
-            onClick={() => setActiveTab("completed")}
-            className={`flex-1 py-3 rounded-full font-medium ${
-              activeTab === "completed"
-                ? "bg-green-700 text-white"
-                : "bg-gray-100"
-            }`}
-          >
-            Completed
-          </button>
+            <button
+              onClick={() => setActiveTab("completed")}
+              className={`flex-1 py-3 rounded-full font-medium ${
+                activeTab === "completed"
+                  ? "bg-green-700 text-white"
+                  : "bg-gray-100"
+              }`}
+            >
+              Completed
+            </button>
+          </div>
         </div>
 
         {/* Cards */}
         {!dataToShow || dataToShow.length === 0 ? (
-          <div className="flex justify-center items-center py-10">
-            <SyncLoader color="#00c76a" size={10} speedMultiplier={0.6} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-2xl shadow-md animate-pulse"
+              >
+                {/* Image Skeleton */}
+                <div className="h-44 bg-gray-300 rounded-t-2xl"></div>
+
+                {/* Content Skeleton */}
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+
+                  <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+
+                  <div className="flex justify-between items-center mt-3">
+                    <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+                    <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {dataToShow.map((item, index) => (
-              <div key={index} className="bg-white rounded-2xl shadow-md p-5">
+              <div key={index} className="bg-white rounded-2xl shadow-md p-3">
                 {/* Header */}
                 <div className="flex gap-4">
                   <img
@@ -198,7 +211,7 @@ const Bookings = () => {
 
                 {/* Button */}
                 {activeTab === "bookings" && (
-                  <div className="mt-5 text-right">
+                  <div className="mt-3 text-right">
                     <button
                       onClick={() => CancelBooking(item)}
                       className="px-5 py-2 border border-green-700 text-green-700 rounded-full text-sm hover:bg-green-700 hover:text-white transition"

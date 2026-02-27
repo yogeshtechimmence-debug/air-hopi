@@ -97,17 +97,23 @@ const Location = () => {
     setSelectedHotel((prev) => (prev?.id === hotel.id ? null : hotel));
   };
 
+  //   ---------------------------------- hotel price icon manage  --------------------------------------------------------------
+
+  const getCurrencySymbol = (currency) => {
+    switch (currency) {
+      case "GBP":
+        return "£";
+      case "CAD":
+        return "C$";
+      case "EUR":
+        return "€";
+      default:
+        return "₹"; // fallback
+    }
+  };
+
   return (
     <div>
-      <div className=" ml-5 cursor-pointer pt-2 flex pb-3">
-        <div
-          onClick={() => Navigate("/")}
-          className="flex items-center gap-1 cursor-pointer"
-        >
-          <ArrowBigLeftIcon />
-          <span>Back</span>
-        </div>
-      </div>
       <div className="h-screen flex flex-col lg:flex-row">
         <div
           className="
@@ -124,62 +130,79 @@ const Location = () => {
 
           <div
             className="
-               grid gap-6
-               grid-cols-2
-               sm:grid-cols-2
-               lg:grid-cols-3 
-             "
+                  grid gap-6
+                  grid-cols-2
+                  sm:grid-cols-2
+                  lg:grid-cols-3
+                "
           >
-            {hotels.map((hotel) => (
-              <div key={hotel.id} className="cursor-pointer group">
-                {/* IMAGE */}
-                <div className="relative overflow-hidden rounded-xl">
-                  <img
-                    onClick={() => Navigate(`/showhotel/${hotel.id}`)}
-                    src={hotel.places_image?.[0]?.image}
-                    className="w-full aspect-square object-cover group-hover:scale-105 transition"
-                    alt={hotel.place_name}
-                  />
-                  {uid && (
-                    <button
-                      onClick={() => AddFavorite(hotel.id)}
-                      className="absolute top-3 right-3 p-2 rounded-full 
-                                        bg-gradient-to-br from-black/0 to-black/30"
-                    >
-                      <Heart
-                        className={
-                          hotel.fav_place === "YES"
-                            ? "text-red-500 fill-red-500  stroke-white stroke-[1.5]"
-                            : "text-white"
-                        }
-                      />
-                    </button>
-                  )}
-                </div>
+            {!hotels || hotels.length === 0 
+              ? [...Array(6)].map((_, index) => (
+                  <div key={index} className="animate-pulse">
+                    {/* Image Skeleton */}
+                    <div className="aspect-square bg-gray-300 rounded-xl"></div>
 
-                <div className="mt-2 space-y-1">
-                  {/* Title + Rating */}
-                  <div className="">
-                    <h3 className="font-medium truncate text-sm sm:text-base">
-                      {hotel.place_name}
-                    </h3>
+                    {/* Content Skeleton */}
+                    <div className="mt-2 space-y-2">
+                      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                      <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                    </div>
                   </div>
-                  {/* Price */}
-                  <p className="font-semibold flex text-sm sm:text-base">
-                    ₹{hotel.rent_per_night?.toLocaleString()}
-                    <span className="font-normal text-gray-500 text-xs sm:text-sm ml-1">
-                      for
-                      {hotel.rental_type === "per_night"
-                        ? "1 night ."
-                        : "1 month"}
-                    </span>
-                    <span className="text-xs flex ml-2 gap-1 sm:text-sm">
-                      <Star className="w-4 h-4" /> {hotel.rating}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            ))}
+                ))
+              : hotels.map((hotel) => (
+                  <div key={hotel.id} className="cursor-pointer group">
+                    {/* IMAGE */}
+                    <div className="relative overflow-hidden rounded-xl">
+                      <img
+                        onClick={() => Navigate(`/showhotel/${hotel.id}`)}
+                        src={hotel.places_image?.[0]?.image}
+                        className="w-full aspect-square object-cover group-hover:scale-105 transition"
+                        alt={hotel.place_name}
+                      />
+
+                      {uid && (
+                        <button
+                          onClick={() => AddFavorite(hotel.id)}
+                          className="absolute top-3 right-3 p-2 rounded-full 
+                bg-gradient-to-br from-black/0 to-black/30"
+                        >
+                          <Heart
+                            className={
+                              hotel.fav_place === "YES"
+                                ? "text-red-500 fill-red-500 stroke-white stroke-[1.5]"
+                                : "text-white"
+                            }
+                          />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="mt-2 space-y-1">
+                      <h3 className="font-medium truncate text-sm sm:text-base">
+                        {hotel.place_name}
+                      </h3>
+
+                      <p className="font-semibold flex text-sm sm:text-base">
+                        <span>
+                          {getCurrencySymbol(hotel.currency)}
+                          {hotel.rent_per_night?.toLocaleString()}
+                        </span>
+
+                        <span className="font-normal mt-0.5 text-gray-500 text-xs sm:text-sm ml-1">
+                          /
+                          {hotel.rental_type === "per_night"
+                            ? "1 night ."
+                            : "1 month"}
+                        </span>
+
+                        <span className="text-xs mt-0.5 flex ml-2 gap-1 sm:text-sm">
+                          <Star className="w-4 h-4 text-green-600 fill-green-600" />
+                          {hotel.rating}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
           </div>
         </div>
 

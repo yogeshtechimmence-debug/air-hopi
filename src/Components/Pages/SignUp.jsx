@@ -29,6 +29,9 @@ const SignUp = ({ isOpen, onClose, openLogin }) => {
     }));
   };
 
+  // -------------------- Sign up -------------------------------------------------------------------------------
+
+
   const handleSubmit = async () => {
     try {
       const data = new FormData();

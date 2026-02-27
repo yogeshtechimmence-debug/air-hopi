@@ -36,7 +36,7 @@ const ShowHotel = () => {
   // -------------------- Get Place Ditails -------------------------------------------------------------------------------
 
   const [placeDitails, setPlaceDitails] = useState({});
-  // console.log(placeDitails);
+  // console.log(placeDitails.places_image);
   const images = placeDitails?.places_image || [];
   const maxGuests = placeDitails?.maximum_guest || 1;
 
@@ -189,6 +189,22 @@ const ShowHotel = () => {
       console.error(error);
     }
   };
+
+  //   ---------------------------------- hotel price icon manage  --------------------------------------------------------------
+
+  const getCurrencySymbol = (currency) => {
+    switch (currency) {
+      case "GBP":
+        return "£";
+      case "CAD":
+        return "C$";
+      case "EUR":
+        return "€";
+      default:
+        return "₹"; // fallback
+    }
+  };
+
   return (
     <div>
       <div className="w-full max-w-6xl mx-auto px-4">
@@ -196,27 +212,39 @@ const ShowHotel = () => {
         <div className="flex justify-between items-center pt-3 mb-4">
           <h1 className="text-2xl font-semibold">Mar Azul 1bhk in Candolim</h1>
 
-          <div className="pt-3 cursor-pointer flex">
-            <button
-              onClick={() => AddFavorite(placeDitails.id)}
-              className="flex gap-2"
-            >
-              <Heart
-                className={
-                  placeDitails?.fav_place === "YES"
-                    ? "w-6 h-6 text-red-500 fill-red-500 stroke-red-500"
-                    : "w-6 h-6 text-black stroke-black"
-                }
-              />{" "}
-              <p>Save</p>
-            </button>
-          </div>
+          {uid && (
+            <div className="pt-3 cursor-pointer flex">
+              <button
+                onClick={() => AddFavorite(placeDitails.id)}
+                className="flex gap-2"
+              >
+                <Heart
+                  className={
+                    placeDitails?.fav_place === "YES"
+                      ? "w-6 h-6 text-red-500 fill-red-500 stroke-red-500"
+                      : "w-6 h-6 text-black stroke-black"
+                  }
+                />
+                <p>Save</p>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Gallery */}
-        {!placeDitails || placeDitails.length === 0 ? (
-          <div className="flex justify-center items-center py-10">
-            <SyncLoader color="#00c76a" size={10} speedMultiplier={0.6} />
+        {!placeDitails?.places_image ||
+        placeDitails.places_image.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-2xl overflow-hidden animate-pulse">
+            {/* LEFT BIG SKELETON */}
+            <div className="h-[420px] bg-gray-300 rounded-lg"></div>
+
+            {/* RIGHT SIDE SKELETON */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="h-[204px] bg-gray-300 rounded-lg"></div>
+              <div className="h-[204px] bg-gray-300 rounded-lg"></div>
+              <div className="h-[204px] bg-gray-300 rounded-lg"></div>
+              <div className="h-[204px] bg-gray-300 rounded-lg"></div>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-2xl overflow-hidden">
@@ -318,11 +346,16 @@ const ShowHotel = () => {
                   ))}
 
                 {/* Show All Button */}
-                {images.length > 4 && (
-                  <button className="absolute bottom-4 right-4 bg-white text-sm font-medium px-4 py-2 rounded-lg shadow">
-                    Show all photos
-                  </button>
-                )}
+                {/* {images.length > 4 && ( */}
+                <button
+                  onClick={() =>
+                    navigate("/hotel_images", { state: placeDitails })
+                  }
+                  className="absolute bottom-4 right-4 bg-white text-sm font-medium px-4 py-2 rounded-lg shadow"
+                >
+                  Show all photos
+                </button>
+                {/* )} */}
               </div>
             )}
           </div>
@@ -415,11 +448,12 @@ const ShowHotel = () => {
 
             {/* RIGHT */}
             <div className="lg:col-span-1">
-              <div className=" border rounded-2xl shadow-lg p-6">
+              <div className="sticky top-24 border rounded-2xl shadow-lg p-6">
                 <div className="mb-4">
                   <span className="text-2xl underline font-semibold">
-                    ₹{placeDitails.rent_per_night}
-                  </span>{" "}
+                    {getCurrencySymbol(placeDitails.currency)}
+                    {placeDitails.rent_per_night?.toLocaleString()}
+                  </span>
                   for
                   <span className=" font-bold  ml-1">
                     {placeDitails.rental_type === "per_night"
@@ -443,7 +477,7 @@ const ShowHotel = () => {
                         }}
                         minDate={new Date()}
                         filterDate={(date) => !isDateDisabled(date)}
-                        placeholderText="Select date"
+                        placeholderText="DD/MM/YY"
                         className="w-full text-sm font-medium outline-none cursor-pointer"
                       />
                     </div>
@@ -465,7 +499,7 @@ const ShowHotel = () => {
                           }
                           return true;
                         }}
-                        placeholderText="Select date"
+                        placeholderText="DD/MM/YY"
                         className="w-full text-sm font-medium outline-none cursor-pointer"
                       />
                     </div>
@@ -538,6 +572,7 @@ const ShowHotel = () => {
           </div>
         </div>
 
+        {/* Rating */}
         <div className="max-w-6xl mx-auto px-4">
           {/* Heading */}
           <div className="text-center mb-8">
@@ -698,10 +733,37 @@ const ShowHotel = () => {
               onClick={() => setRatingShowModal(false)}
               className="absolute top-4 right-4 text-gray-500 hover:text-black"
             >
-              ✕
+              {" "}
+              ✕{" "}
             </button>
 
-            <h2 className="text-xl font-semibold mb-6">All Reviews</h2>
+            {/* Heading */}
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center gap-6 text-3xl font-semibold">
+                {/* Left Patti */}
+                <div className="mt-4">
+                  <img
+                    src="https://i.ibb.co/vxcpZKbt/78b7687c-5acf-4ef8-a5ea-eda732ae3b2f.avif"
+                    className="w-16 h-28"
+                    alt=""
+                  />
+                </div>
+
+                {/* Rating */}
+                <span className="tracking-wide">{placeDitails?.rating}</span>
+
+                {/* Right Patti */}
+                <div className="mt-4">
+                  <img
+                    src="https://i.ibb.co/pvWTwypX/b4005b30-79ff-4287-860c-67829ecd7412.avif"
+                    className="w-16 h-28"
+                    alt=""
+                  />
+                </div>
+              </div>
+
+              <h2 className="text-xl font-semibold ">Guest Reviews</h2>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {reviews.map((item, index) => {
@@ -780,7 +842,7 @@ const ShowHotel = () => {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="relative bg-white rounded-xl p-6 w-[90%] max-w-md">
+          <div className="relative bg-white rounded-md p-6 w-[90%] max-w-sm">
             <button
               onClick={() => setShowModal(false)}
               className="absolute top-3 right-3 text-gray-600 hover:text-black text-lg font-bold"
@@ -788,28 +850,29 @@ const ShowHotel = () => {
               ✕
             </button>
 
-            <h2 className="text-lg font-semibold mb-2 text-center">
-              Login Required
-            </h2>
+            <h2 className="text-lg font-semibold mb-2">Login Required</h2>
 
-            <p className="text-sm text-gray-600 mb-6 text-center">
-              Reservation karne ke liye login karna zaroori hai.
+            <p className="text-sm text-gray-600 mb-6">
+              Please Login to Continue
             </p>
 
-            <div className="flex justify-center gap-4">
+            <div className="flex justify-end gap-3">
               <button
                 onClick={() => {
                   setLoginOpen(true);
                   setShowModal(false);
                 }}
-                className="px-5 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-sm"
+                className="px-5 py-2 bg-green-800 hover:bg-green-700 text-white rounded-md text-sm"
               >
                 Login
               </button>
 
               <button
-                onClick={() => setSignupOpen(true)}
-                className="px-5 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full text-sm"
+                onClick={() => {
+                  setSignupOpen(true);
+                  setShowModal(false);
+                }}
+                className="px-5 py-2 bg-green-800 hover:bg-green-700 text-white rounded-md text-sm"
               >
                 Sign Up
               </button>

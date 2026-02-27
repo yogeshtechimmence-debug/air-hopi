@@ -57,15 +57,6 @@ const Favorites = () => {
 
   return (
     <div>
-      <div className=" ml-5 cursor-pointer pt-2 flex pb-3">
-        <div
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1 cursor-pointer"
-        >
-          <ArrowBigLeftIcon />
-          <span>Back</span>
-        </div>
-      </div>
       <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Heading */}
         <div className="text-center mb-12">
@@ -76,8 +67,28 @@ const Favorites = () => {
         </div>
 
         {!favorites || favorites.length === 0 ? (
-          <div className="flex justify-center items-center py-10">
-            <SyncLoader color="#00c76a" size={10} speedMultiplier={0.6} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-2xl shadow-md animate-pulse"
+              >
+                {/* Image Skeleton */}
+                <div className="h-44 bg-gray-300 rounded-t-2xl"></div>
+
+                {/* Content Skeleton */}
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+
+                  <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+
+                  <div className="flex justify-between items-center mt-3">
+                    <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+                    <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

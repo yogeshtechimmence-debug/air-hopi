@@ -12,16 +12,26 @@ const Confirmation = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
   const { placeDitails, startDate, endDate, guests } = state || {};
-  // console.log(placeDitails?.id);
+  console.log(placeDitails);
   const maxGuests = placeDitails?.maximum_guest || 1;
 
   const [BookDate, setBookDate] = useState([]);
   const [guestCount, setGuestCount] = useState(guests || 1);
 
+  // Aaj ki date
+  const today = new Date();
+
+  // Kal ki date
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+
   const [checkIn, setCheckIn] = useState(
-    startDate ? new Date(startDate) : null,
+    startDate ? new Date(startDate) : today,
   );
-  const [checkOut, setCheckOut] = useState(endDate ? new Date(endDate) : null);
+
+  const [checkOut, setCheckOut] = useState(
+    endDate ? new Date(endDate) : tomorrow,
+  );
 
   // ---------------------------------------------- Booking dates ------------------------------
 
@@ -99,6 +109,7 @@ const Confirmation = () => {
 
   const [paymentMethod, setPaymentMethod] = useState("paypal"); // paypal | card
   const [showStripe, setShowStripe] = useState(false);
+  const [showApplePay, setShowApplePay] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successData, setSuccessData] = useState(null);
 
@@ -161,6 +172,14 @@ const Confirmation = () => {
 
   const user_id = localStorage.getItem("user_id");
 
+  //   ---------------------------------- hotel price icon manage  --------------------------------------------------------------
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en", {
+      style: "currency",
+      currency: placeDitails?.currency || "INR",
+    }).format(amount);
+  };
   return (
     <div>
       <div className="bg-gray-50">
@@ -168,23 +187,40 @@ const Confirmation = () => {
           <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-2xl overflow-hidden flex flex-col lg:flex-row">
             {/* LEFT IMAGE */}
             <div className="w-full lg:w-1/2">
-              <img
-                src={placeDitails?.places_image[0]?.image}
-                alt="Hotel"
-                className="w-full h-64 lg:h-full object-cover"
-              />
+              {!placeDitails ? (
+                <div className="animate-pulse">
+                  {/* Image Skeleton */}
+                  <div className="w-full h-40 lg:h-[400px] bg-gray-300 rounded-lg"></div>
+
+                  {/* Text Skeleton */}
+                  <div className="space-y-4 mt-4 px-3">
+                    <div className="h-6 bg-gray-300 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-300 rounded w-full"></div>
+                    <div className="h-4 bg-gray-300 rounded w-5/6"></div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <img
+                    src={placeDitails?.places_image[0]?.image}
+                    alt="Hotel"
+                    className="w-full h-40 lg:h-[400px] object-cover rounded-lg"
+                  />
+
+                  <div className="space-y-6 mt-4">
+                    <h2 className="text-2xl font-semibold ml-3">
+                      {placeDitails?.place_name}
+                    </h2>
+                    <p className="text-gray-500 ml-3">
+                      {placeDitails?.description}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* RIGHT CONTENT */}
-            <div className="w-full lg:w-1/2 p-6 lg:p-8 space-y-6">
-              {/* Hotel Info */}
-              <div>
-                <h2 className="text-2xl font-semibold">Hotel Royal Palace</h2>
-                <p className="text-gray-500">
-                  Luxury stay in the heart of the city
-                </p>
-              </div>
-
+            <div className="w-full lg:w-1/2 p-6 lg:p-8 overflow-y-auto lg:h-[500px]">
               {/* Dates */}
               <div className="grid grid-cols-2 gap-4 border rounded-xl p-4">
                 {/* Check-in */}
@@ -199,7 +235,7 @@ const Confirmation = () => {
                     }}
                     minDate={new Date()} // aaj se pehle disable
                     filterDate={(date) => !isDateDisabled(date)}
-                    placeholderText="Select date"
+                    placeholderText="DD/MM/YY"
                     className="w-full font-medium outline-none cursor-pointer"
                   />
                 </div>
@@ -223,7 +259,7 @@ const Confirmation = () => {
                       }
                       return true;
                     }}
-                    placeholderText="Select date"
+                    placeholderText="DD/MM/YY"
                     className="w-full font-medium outline-none cursor-pointer"
                   />
                 </div>
@@ -273,21 +309,21 @@ const Confirmation = () => {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>
-                    ₹{pricePerNight} × {totalDays} nights
+                    {formatCurrency(pricePerNight)} × {totalDays} nights
                   </span>
-                  <span>₹{totalAmount}</span>
+                  <span>{formatCurrency(totalAmount)}</span>
                 </div>
 
                 {discountPercent > 0 && discountAmount > 0 && (
                   <div className="flex justify-between text-sm text-green-700">
                     <span>{discountPercent}% long stay discount</span>
-                    <span>- ₹{discountAmount}</span>
+                    <span>- {formatCurrency(discountAmount)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between text-lg font-semibold border-t pt-2">
                   <span>Total</span>
-                  <span>₹{finalPrice}</span>
+                  <span>{formatCurrency(finalPrice)}</span>
                 </div>
               </div>
 
@@ -347,7 +383,7 @@ const Confirmation = () => {
                   className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer
                       ${
                         paymentMethod === "applepay"
-                          ? "border-black bg-gray-100"
+                          ? "border-black bg-white"
                           : "border-gray-300"
                       }
                     `}
@@ -368,7 +404,7 @@ const Confirmation = () => {
                 </div>
               </div>
 
-              <button className="w-full bg-gray-300 text-black hover:bg-gray-400 hover:text-white py-3 rounded-xl font-semibold">
+              <button className="w-full mt-3 bg-gray-300 text-black hover:bg-gray-400 hover:text-white py-3 rounded-xl font-semibold">
                 <a
                   className="no-underline hover:no-underline hover:text-white"
                   href="https://techimmense.in/airhopi/cancelation_page.html"
@@ -395,25 +431,27 @@ const Confirmation = () => {
                       placeDitails.rent_per_night,
                     );
 
-                    window.location.href = 
-                    `https://techimmense.in/airhopi/webservice/paypalAPI?request_id=${placeDitails?.id}&total_amount=${totalAmount}&currency=GBP`;
+                    window.location.href = `https://techimmense.in/airhopi/webservice/paypalAPI?request_id=${placeDitails?.id}&total_amount=${totalAmount}&currency=GBP`;
                   }
 
                   if (paymentMethod === "card") {
                     setShowStripe(true);
                   }
+                  if (paymentMethod === "applepay") {
+                    setShowApplePay(true);
+                  }
                 }}
-                disabled={paymentMethod === "applepay"}
                 className="w-full mt-3 bg-green-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold"
               >
                 Continue & Pay
               </button>
 
-              {paymentMethod === "applepay" && (
+              {showApplePay && (
                 <ApplePay
                   amount={finalPrice}
                   onSuccess={() => {
-                    BookingConfirm();
+                    // BookingConfirm();
+                    // setShowApplePay(false);
                   }}
                 />
               )}

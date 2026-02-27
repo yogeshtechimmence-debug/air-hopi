@@ -14,6 +14,7 @@ import Confirmation from "./Components/Pages/Confirmation";
 import PrivateRoute from "./PrivateRoute/PrivateRoute";
 import PaymentSuccess from "./Components/Pages/PaymentSuccess";
 import PaymentCancel from "./Components/Pages/PaymentCancel";
+import ShowHoteLImage from "./Components/Pages/ShowHoteLImage";
 
 const stripePromise = loadStripe(
   "pk_test_51Sng0N9dSsEpDSwkwI6w7w4vliA3nJlzTBNxGhuq0vwDkxUXKprz1sBcZxpu2MhkBHfsX1IgQB0Q49Jn1qUX5nsG00rJayTX0t",
@@ -41,6 +42,7 @@ const App = () => {
           <Route path="/location" element={<Location />} />
           <Route path="/showhotel/:place_id" element={<ShowHotel />} />
           <Route path="/payment_done" element={<PaymentSuccess />} />
+          <Route path="/hotel_images" element={<ShowHoteLImage />} />
 
           <Route path="/paypal_cancel" element={<PaymentCancel />} />
 

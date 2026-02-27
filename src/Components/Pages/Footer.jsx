@@ -20,15 +20,15 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold text-gray-900 mb-4">Hosting</h3>
           <ul className="space-y-3">
-            <li>Airbnb your home</li>
-            <li>Airbnb your experience</li>
-            <li>Airbnb your service</li>
+            <li>airhopi your home</li>
+            <li>airhopi your experience</li>
+            <li>airhopi your service</li>
           </ul>
         </div>
 
-        {/* Airbnb */}
+        {/* airhopi */}
         <div>
-          <h3 className="font-semibold text-gray-900 mb-4">Airbnb</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">airhopi</h3>
           <ul className="space-y-3">
             <li>2025 Summer Release</li>
             <li>Newsroom</li>
@@ -42,7 +42,7 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between text-sm text-gray-600 gap-4">
           {/* Left */}
           <div className="flex flex-wrap items-center gap-2">
-            <span>© 2026 Airbnb, Inc.</span>
+            <span>© 2026 airhopi, Inc.</span>
             <span>·</span>
             <span>Privacy</span>
             <span>·</span>
@@ -51,26 +51,6 @@ const Footer = () => {
             <span>Company details</span>
           </div>
 
-          {/* Right */}
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 cursor-pointer">
-              🌐 English (IN)
-            </span>
-            <span className="cursor-pointer">₹ INR</span>
-
-            {/* Social icons (placeholder) */}
-            <div className="flex gap-3 text-lg">
-              <span>
-                <Earth />
-              </span>
-              <span>
-                <X />
-              </span>
-              <span>
-                <Camera />
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </footer>

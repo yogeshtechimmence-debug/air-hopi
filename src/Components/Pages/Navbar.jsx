@@ -50,12 +50,21 @@ const Navbar = () => {
       <nav className="w-full border-b bg-white fixed top-0 left-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center">
           {/* Logo */}
-          <img
-            src="https://i.ibb.co/zHTnb6y2/Air-Hopi-Logo.png"
-            alt="Logo"
-            className="h-7 sm:h-9 md:h-10 cursor-pointer"
-            onClick={() => navigate("/")}
-          />
+          <div className="flex items-center gap-2 px-2  rounded-lg">
+            <img
+              src="https://i.ibb.co/pFsnjPb/Air-Hopi-Logo.png"
+              alt="Logo"
+              className="h-7 sm:h-9 md:h-10 cursor-pointer"
+              onClick={() => navigate("/")}
+            />
+
+            <span
+              onClick={() => navigate("/")}
+              className="text-green-700 font-sans font-semibold text-lg sm:text-xl md:text-3xl cursor-pointer"
+            >
+              Airhopi
+            </span>
+          </div>
 
           {/* Right Side */}
           <div className="relative" ref={dropdownRef}>

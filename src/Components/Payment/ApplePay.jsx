@@ -23,10 +23,12 @@ export const ApplePay = ({ amount, onSuccess }) => {
     });
 
     pr.canMakePayment().then((result) => {
+      console.log("Apple Pay support:", result);
       if (result?.applePay) {
         setPaymentRequest(pr);
       }
     });
+    
 
     pr.on("paymentmethod", async (e) => {
       // Normally yahan backend call hoti hai
